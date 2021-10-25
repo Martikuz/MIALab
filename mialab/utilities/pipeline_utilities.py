@@ -298,6 +298,7 @@ def init_evaluator() -> eval_.Evaluator:
     #Hoi
     #Hoi
     #test
+    #hoi
     metrics = [metric.DiceCoefficient(), metric.categorical.HausdorffDistance(percentile=95)]
     #warnings.warn('Initialized evaluation with the Dice coefficient. Do you know other suitable metrics?')
 

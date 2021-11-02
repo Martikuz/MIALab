@@ -5,7 +5,7 @@ import pandas as pd
 from datetime import datetime
 
 # Local variables for plotting
-AVAILABLE_METRICS = ['DICE', 'HDRFDST']
+AVAILABLE_METRICS = ['DICE', 'HDRFDST95']   # mk: added code that renames HDRFDST to HDRFDST95
 
 def read_pure_python(dir_path: str):
     # Get the correct file
@@ -112,7 +112,7 @@ def main():
     #pass  # pass is just a placeholder if there is no other code
 
     # Configuration
-    metric_to_compute = ('DICE', 'HDRFDST')
+    metric_to_compute = ('DICE', 'HDRFDST95')   # mk: added code that renames HDRFDST to HDRFDST95
     structures_to_compute = ('Thalamus',)
     experiment_paths = ('E:/01_Programme/Git/00_MyFolder/MIALab/bin/mia-result/2021', 'E:/01_Programme/Git/00_MyFolder/MIALab/bin/mia-result/2021')
     experiment_names = ('First Experiment', 'Second Experiment')

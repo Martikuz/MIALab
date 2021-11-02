@@ -295,11 +295,11 @@ def init_evaluator() -> eval_.Evaluator:
 
     # initialize metrics
     # todo: add hausdorff distance, 95th percentile (see metric.HausdorffDistance)
-    #Hoi
-    #Hoi
-    #test
-    #hoi
-    metrics = [metric.DiceCoefficient(), metric.categorical.HausdorffDistance(percentile=95)]
+    # mk: added code that renames HDRFDST to HDRFDST95
+    # mk: added code that add the element VolumeSimilarity to the list with:
+    #     metric.VolumeSimilarity() according the pymia documentation on:
+    #     https://pymia.readthedocs.io/en/latest/examples.evaluation.basic.html
+    metrics = [metric.DiceCoefficient(), metric.HausdorffDistance(percentile=95, metric='HDRFDST95'), metric.VolumeSimilarity()]
     #warnings.warn('Initialized evaluation with the Dice coefficient. Do you know other suitable metrics?')
 
     # define the labels to evaluate

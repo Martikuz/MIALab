@@ -7,13 +7,23 @@ import warnings
 import pymia.filtering.filter as pymia_fltr
 import SimpleITK as sitk
 
+# import for histogram matching
+import numpy as np
+import matplotlib.pyplot as plt
+from skimage import data
+from skimage import exposure
+from skimage.exposure import match_histograms
+
+# *******************************************************************************************************************
+# ***************** BEGIN - Normalization ***************************************************************************
 
 class ImageNormalization(pymia_fltr.Filter):
     """Represents a normalization filter."""
 
-    def __init__(self):
+    def __init__(self, normalization='Z'):
         """Initializes a new instance of the ImageNormalization class."""
         super().__init__()
+        self.normalization = normalization  # Possible initialisation input: 'None', 'Z', 'HM1', 'HM2'
 
     def execute(self, image: sitk.Image, params: pymia_fltr.FilterParams = None) -> sitk.Image:
         """Executes a normalization on an image.
@@ -28,11 +38,56 @@ class ImageNormalization(pymia_fltr.Filter):
 
         img_arr = sitk.GetArrayFromImage(image)
 
-        # todo: normalize the image using numpy
-        # warnings.warn('No normalization implemented. Returning unprocessed image.')
-        mean = img_arr.mean()
-        std = img_arr.std()
-        img_arr = (img_arr - mean) / std
+        if self.normalization == 'None':
+            print('WARNING: no normalization method applied!')
+            img_out = img_arr # why not needed? and why does it lead to an error?
+
+        elif self.normalization == 'Z':
+            print('Normalization: Z-Score')
+            # todo: normalize the image using numpy
+            # warnings.warn('No normalization implemented. Returning unprocessed image.')
+            mean = img_arr.mean()
+            std = img_arr.std()
+            img_arr = (img_arr - mean) / std
+
+            img_out = sitk.GetImageFromArray(img_arr)
+            img_out.CopyInformation(image)
+
+        elif self.normalization == 'HM1':
+            print('Normalization: Histogram Matching Method 1')
+            # pdfr_arr = copy.deepcopy(img_arr)
+            # n_val = 197*233*189                    # assuming all images are of the same size!!!!
+            # for xit in range(198):
+            #     for yit in range(234):
+            #         for zit in range(190):
+            #         r_val = img_arr[xit,yit,zit]
+            #         nj_val = None #histogram value of r_val[xit,yit,zit]
+            #         pdfr_arr[xit,yit,zit] = nj_val/n_val
+            # img_arr = pdfr_arr
+
+        elif self.normalization == 'HM2':
+            print('Normalization: Histogram Matching Method 2')
+            # read in reference image --> ref_arr
+            # referenceH = data.ref_arr()
+            # imageH = data.img_arr()
+            # matched = match_histograms(imageH, referenceH, channel_axis=-1)
+            # fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(8,3), sharex=True, sharey=True)
+            # for aa in (ax1, ax2, ax3):
+            #     aa.set_axis_off()
+            # ax1.imshow(imageH[98,:,:])
+            # ax1.set_title('source')
+            # ax2.imshow(referenceH[98,:,:])
+            # ax2.set_title('reference')
+            # ax3.imshow(matched[98,:,:])
+            # ax3.set_title('Matched')
+            # plt.tight_layout()
+            # plt.show()
+            # img_arr = matched
+
+
+        else:
+            print('WARNING: unknown normalization method initialisation input!')
+            img_out = img_arr # why not needed? and why does it lead to an error?
 
         img_out = sitk.GetImageFromArray(img_arr)
         img_out.CopyInformation(image)
@@ -48,6 +103,8 @@ class ImageNormalization(pymia_fltr.Filter):
         return 'ImageNormalization:\n' \
             .format(self=self)
 
+# ***************** END - Normalization ***************************************************************************
+# *****************************************************************************************************************
 
 class SkullStrippingParameters(pymia_fltr.FilterParams):
     """Skull-stripping parameters."""

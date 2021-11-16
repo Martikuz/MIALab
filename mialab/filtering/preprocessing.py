@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from skimage import data
 from skimage import exposure
 from skimage.exposure import match_histograms
+import intensity_normalization as im
 
 # *******************************************************************************************************************
 # ***************** BEGIN - Normalization ***************************************************************************
@@ -20,10 +21,11 @@ from skimage.exposure import match_histograms
 class ImageNormalization(pymia_fltr.Filter):
     """Represents a normalization filter."""
 
-    def __init__(self, normalization='Z'):
+    def __init__(self, normalization='WS',mask=None):
         """Initializes a new instance of the ImageNormalization class."""
         super().__init__()
         self.normalization = normalization  # Possible initialisation input: 'None', 'Z', 'HM1', 'HM2'
+        self.mask=mask
 
     def execute(self, image: sitk.Image, params: pymia_fltr.FilterParams = None) -> sitk.Image:
         """Executes a normalization on an image.
@@ -83,6 +85,26 @@ class ImageNormalization(pymia_fltr.Filter):
             # plt.tight_layout()
             # plt.show()
             # img_arr = matched
+
+        elif self.normalization == 'WS':
+            print('Normalization: White Stripe Method')
+            #"""
+            #execute(self, image: sitk.Image, params: pymia_fltr.FilterParams = None) -> sitk.Image:
+            modality="t1"
+            width=0.05
+            if modality is None:
+                modality = "t1"
+            #mask = sitk.GetArrayFromImage(self.mask)
+            #masked = data * mask
+            voi = image
+            wm_mode = im.get_tissue_mode(voi, modality)
+            wm_mode_quantile: float = np.mean(voi < wm_mode).item()
+            lower_bound = max(wm_mode_quantile - width, 0.0)
+            upper_bound = min(wm_mode_quantile + width, 1.0)
+            ws_l, ws_u = np.quantile(voi, (lower_bound, upper_bound))
+            whitestripe = (voi > ws_l) & (voi < ws_u)
+
+
 
 
         else:

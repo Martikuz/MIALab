@@ -203,6 +203,8 @@ def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
         img.images[structure.BrainImageTypes.BrainMask])
 
     # construct pipeline for T1w image pre-processing
+    #-------------------------------------------------------
+    #Start of the adaptation
     pipeline_t1 = fltr.FilterPipeline()
     if kwargs.get('registration_pre', False):
         pipeline_t1.add_filter(fltr_prep.ImageRegistration())
@@ -213,7 +215,16 @@ def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
         pipeline_t1.set_param(fltr_prep.SkullStrippingParameters(img.images[structure.BrainImageTypes.BrainMask]),
                               len(pipeline_t1.filters) - 1)
     if kwargs.get('normalization_pre', False):
-        pipeline_t1.add_filter(fltr_prep.ImageNormalization())
+        if kwargs.get('white_stripes', False):
+            pipeline_t1.add_filter(fltr_prep.WhiteStripesT1())#mask=kwargs.get('t1_mask', None))
+        elif kwargs.get('no_normalization', False):
+            pipeline_t1.add_filter(fltr_prep.NoNormalization())
+        elif kwargs.get('histogram_matching_1', False):
+            pipeline_t1.add_filter(fltr_prep.HistogramMatching1())
+        elif kwargs.get('histogram_matching_2', False):
+            pipeline_t1.add_filter(fltr_prep.HistogramMatching2())
+        elif kwargs.get('z_score', False):
+            pipeline_t1.add_filter(fltr_prep.ZScore())
 
     # execute pipeline on the T1w image
     img.images[structure.BrainImageTypes.T1w] = pipeline_t1.execute(img.images[structure.BrainImageTypes.T1w])
@@ -229,8 +240,19 @@ def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
         pipeline_t2.set_param(fltr_prep.SkullStrippingParameters(img.images[structure.BrainImageTypes.BrainMask]),
                               len(pipeline_t2.filters) - 1)
     if kwargs.get('normalization_pre', False):
-        pipeline_t2.add_filter(fltr_prep.ImageNormalization())
+        if kwargs.get('white_stripes', False):
+            pipeline_t2.add_filter(fltr_prep.WhiteStripesT2())#mask=kwargs.get('t1_mask', None))
+        elif kwargs.get('no_normalization', False):
+            pipeline_t2.add_filter(fltr_prep.NoNormalization())
+        elif kwargs.get('histogram_matching_1', False):
+            pipeline_t2.add_filter(fltr_prep.HistogramMatching1())
+        elif kwargs.get('histogram_matching_2', False):
+            pipeline_t2.add_filter(fltr_prep.HistogramMatching2())
+        elif kwargs.get('z_score', False):
+            pipeline_t2.add_filter(fltr_prep.ZScore())
 
+    #End of adaptation
+    #------------------------------------------------------------------------------
     # execute pipeline on the T2w image
     img.images[structure.BrainImageTypes.T2w] = pipeline_t2.execute(img.images[structure.BrainImageTypes.T2w])
 

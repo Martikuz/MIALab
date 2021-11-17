@@ -7,6 +7,10 @@ Author: Jacob Reinhold (jcreinhold@gmail.com)
 Created on: Jun 01, 2021
 """
 
+from typing import Tuple
+import numpy as np
+import statsmodels.api as sm
+from scipy.signal import argrelmax
 
 
 __all__ = [
@@ -16,12 +20,6 @@ __all__ = [
     "get_tissue_mode",
     "smooth_histogram",
 ]
-
-from typing import Tuple
-
-import numpy as np
-import statsmodels.api as sm
-from scipy.signal import argrelmax
 
 PEAK = {
     "last": ["t1", "other", "last"],
@@ -59,7 +57,6 @@ def get_largest_tissue_mode(data: np.ndarray) -> float:
     largest_tissue_mode: float = grid[np.argmax(pdf)]
     return largest_tissue_mode
 
-
 def get_last_tissue_mode(
         data: np.ndarray,
         remove_tail: bool = True,
@@ -84,11 +81,7 @@ def get_last_tissue_mode(
     return last_tissue_mode
 
 
-def get_first_tissue_mode(
-        data: np.ndarray,
-        remove_tail: bool = True,
-        tail_percentage: float = 99.0,
-) -> float:
+def get_first_tissue_mode(data: np.ndarray,remove_tail: bool = True,tail_percentage: float = 99.0,) -> float:
     """Mode of the lowest-intensity tissue class
     Args:
         data: image data
@@ -110,7 +103,7 @@ def get_first_tissue_mode(
 
 def get_tissue_mode(data: np.ndarray, modality: str) -> float:
     """Find the appropriate tissue mode given a modality"""
-    modality_ = modality.lower()
+    modality_ = modality.lower()#Convert tol lower case
     if modality_ in PEAK["last"]:
         mode = get_last_tissue_mode(data)
     elif modality_ in PEAK["largest"]:

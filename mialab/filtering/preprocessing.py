@@ -10,6 +10,7 @@ import SimpleITK as sitk
 # import for histogram matching
 import numpy as np
 import matplotlib.pyplot as plt
+from pymia.filtering.filter import FilterParams
 from skimage import data
 from skimage import exposure
 from skimage.exposure import match_histograms
@@ -17,105 +18,132 @@ import intensity_normalization as im
 
 # *******************************************************************************************************************
 # ***************** BEGIN - Normalization ***************************************************************************
+# Adapted: pipeline_utilites.py from line 205
+# e.g.     if kwargs.get('normalization_pre', False):
+#         if kwargs.get('white_stripes', False):
+#             pipeline_t1.add_filter(fltr_prep.WhiteStripesT1())
+#         elif kwargs.get('no_normalization', False):
+#             pipeline_t1.add_filter(fltr_prep.NoNormalization())
+#           ....
+#
+#Adapted: Main.py
+#    pre_process_params = {'skullstrip_pre': True,
+#                           'normalization_pre': True,
+#                           'registration_pre': True,
+#                           'coordinates_feature': True,
+#                           'intensity_feature': True,
+#                           'gradient_intensity_feature': True,
+#                           'white_stripes': False,
+#                           'no_normalization': False,
+#                           'histogram_matching_1': False,
+#                           'histogram_matching_2': False,
+#                           'z_score': True}
+#
+class WhiteStripesBase(pymia_fltr.Filter):
 
-class ImageNormalization(pymia_fltr.Filter):
-    """Represents a normalization filter."""
+    def post_execute_base(self) -> bool:
+        #img_arr = sitk.GetArrayFromImage(image)
+        #img_out = sitk.GetImageFromArray(img_arr)
+        #img_out.CopyInformation(image)
+        return True
 
-    def __init__(self, normalization='WS',mask=None):
-        """Initializes a new instance of the ImageNormalization class."""
-        super().__init__()
-        self.normalization = normalization  # Possible initialisation input: 'None', 'Z', 'HM1', 'HM2'
-        self.mask=mask
+    def execute(self, image: sitk.Image, params: FilterParams = None) -> sitk.Image:
+        modality = "last"
+        width = 0.05
+        # if modality is None:
+        #    modality = "last"
+        # mask = sitk.GetArrayFromImage(self.mask)
+        # masked = data * mask
+        voi = image
+        wm_mode = im.get_tissue_mode(voi, modality)
+        wm_mode_quantile: float = np.mean(voi < wm_mode).item()
+        lower_bound = max(wm_mode_quantile - width, 0.0)
+        upper_bound = min(wm_mode_quantile + width, 1.0)
+        ws_l, ws_u = np.quantile(voi, (lower_bound, upper_bound))
+        whitestripe = (voi > ws_l) & (voi < ws_u)
+        # Necessary??
+        # img_out = sitk.GetImageFromArray(img_arr)
+        # img_out.CopyInformation(image)
+        return whitestripe
+        return image
 
-    def execute(self, image: sitk.Image, params: pymia_fltr.FilterParams = None) -> sitk.Image:
-        """Executes a normalization on an image.
+class WhiteStripesT1(WhiteStripesBase):
 
-        Args:
-            image (sitk.Image): The image.
-            params (FilterParams): The parameters (unused).
+    def execute(self, image: sitk.Image, params: FilterParams = None) -> sitk.Image:
+        preprocessed_image = super().execute(image, params)
+        print(self.post_execute_base())
 
-        Returns:
-            sitk.Image: The normalized image.
-        """
+class WhiteStripesT2(WhiteStripesBase):
+    """Represents no norm normalization"""
+    def execute(self, image: sitk.Image, params: FilterParams = None) -> sitk.Image:
+        preprocessed_image = super().execute(image, params)
+        print(self.post_execute_base())
 
+
+class NoNormalization(pymia_fltr.Filter):
+    """Represents no norm normalization"""
+    def execute(self, image: sitk.Image, params: FilterParams = None) -> sitk.Image:
+        return image
+
+class ZScore(pymia_fltr.Filter):
+    def execute(self, image: sitk.Image, params: FilterParams = None) -> sitk.Image:
+        """Represents ZScore"""
         img_arr = sitk.GetArrayFromImage(image)
-
-        if self.normalization == 'None':
-            print('WARNING: no normalization method applied!')
-            img_out = img_arr # why not needed? and why does it lead to an error?
-
-        elif self.normalization == 'Z':
-            print('Normalization: Z-Score')
-            # todo: normalize the image using numpy
-            # warnings.warn('No normalization implemented. Returning unprocessed image.')
-            mean = img_arr.mean()
-            std = img_arr.std()
-            img_arr = (img_arr - mean) / std
-
-            img_out = sitk.GetImageFromArray(img_arr)
-            img_out.CopyInformation(image)
-
-        elif self.normalization == 'HM1':
-            print('Normalization: Histogram Matching Method 1')
-            # pdfr_arr = copy.deepcopy(img_arr)
-            # n_val = 197*233*189                    # assuming all images are of the same size!!!!
-            # for xit in range(198):
-            #     for yit in range(234):
-            #         for zit in range(190):
-            #         r_val = img_arr[xit,yit,zit]
-            #         nj_val = None #histogram value of r_val[xit,yit,zit]
-            #         pdfr_arr[xit,yit,zit] = nj_val/n_val
-            # img_arr = pdfr_arr
-
-        elif self.normalization == 'HM2':
-            print('Normalization: Histogram Matching Method 2')
-            # read in reference image --> ref_arr
-            # referenceH = data.ref_arr()
-            # imageH = data.img_arr()
-            # matched = match_histograms(imageH, referenceH, channel_axis=-1)
-            # fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(8,3), sharex=True, sharey=True)
-            # for aa in (ax1, ax2, ax3):
-            #     aa.set_axis_off()
-            # ax1.imshow(imageH[98,:,:])
-            # ax1.set_title('source')
-            # ax2.imshow(referenceH[98,:,:])
-            # ax2.set_title('reference')
-            # ax3.imshow(matched[98,:,:])
-            # ax3.set_title('Matched')
-            # plt.tight_layout()
-            # plt.show()
-            # img_arr = matched
-
-        elif self.normalization == 'WS':
-            print('Normalization: White Stripe Method')
-            #"""
-            #execute(self, image: sitk.Image, params: pymia_fltr.FilterParams = None) -> sitk.Image:
-            modality="t1"
-            width=0.05
-            if modality is None:
-                modality = "t1"
-            #mask = sitk.GetArrayFromImage(self.mask)
-            #masked = data * mask
-            voi = image
-            wm_mode = im.get_tissue_mode(voi, modality)
-            wm_mode_quantile: float = np.mean(voi < wm_mode).item()
-            lower_bound = max(wm_mode_quantile - width, 0.0)
-            upper_bound = min(wm_mode_quantile + width, 1.0)
-            ws_l, ws_u = np.quantile(voi, (lower_bound, upper_bound))
-            whitestripe = (voi > ws_l) & (voi < ws_u)
-
-
-
-
-        else:
-            print('WARNING: unknown normalization method initialisation input!')
-            img_out = img_arr # why not needed? and why does it lead to an error?
+        mean = img_arr.mean()
+        std = img_arr.std()
+        img_arr = (img_arr - mean) / std
 
         img_out = sitk.GetImageFromArray(img_arr)
         img_out.CopyInformation(image)
-
         return img_out
 
+class HistogramMatching1(pymia_fltr.Filter):
+
+    def execute(self, image: sitk.Image, params: FilterParams = None) -> sitk.Image:
+        print('Normalization: Histogram Matching Method 2')
+        img_arr = sitk.GetArrayFromImage(image)
+        # read in reference image --> ref_arr
+        # referenceH = data.ref_arr()
+        # imageH = data.img_arr()
+        # matched = match_histograms(imageH, referenceH, channel_axis=-1)
+        # fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(8,3), sharex=True, sharey=True)
+        # for aa in (ax1, ax2, ax3):
+        #     aa.set_axis_off()
+        # ax1.imshow(imageH[98,:,:])
+        # ax1.set_title('source')
+        # ax2.imshow(referenceH[98,:,:])
+        # ax2.set_title('reference')
+        # ax3.imshow(matched[98,:,:])
+        # ax3.set_title('Matched')
+        # plt.tight_layout()
+        # plt.show()
+        # img_arr = matched
+        img_out = sitk.GetImageFromArray(img_arr)
+        img_out.CopyInformation(image)
+        return img_out
+
+class HistogramMatching2(pymia_fltr.Filter):
+
+    def execute(self, image: sitk.Image, params: FilterParams = None) -> sitk.Image:
+        print('Normalization: Histogram Matching Method 1')
+        img_arr = sitk.GetArrayFromImage(image)
+        # pdfr_arr = copy.deepcopy(img_arr)
+        # n_val = 197*233*189                    # assuming all images are of the same size!!!!
+        # for xit in range(198):
+        #     for yit in range(234):
+        #         for zit in range(190):
+        #         r_val = img_arr[xit,yit,zit]
+        #         nj_val = None #histogram value of r_val[xit,yit,zit]
+        #         pdfr_arr[xit,yit,zit] = nj_val/n_val
+        # img_arr = pdfr_arr
+
+        img_out = sitk.GetImageFromArray(img_arr)
+        img_out.CopyInformation(image)
+        return img_out
+
+
+#----------------------------------------------------------------------
+#----------------------------------------------------------------------
     def __str__(self):
         """Gets a printable string representation.
 

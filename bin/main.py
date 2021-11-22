@@ -65,11 +65,11 @@ def main(result_dir: str, data_atlas_dir: str, data_train_dir: str, data_test_di
                           'coordinates_feature': True,
                           'intensity_feature': True,
                           'gradient_intensity_feature': True,
-                          'white_stripes': False,
+                          'white_stripes': True,
                           'no_normalization': False,
                           'histogram_matching_1': False,
                           'histogram_matching_2': False,
-                          'z_score': True}
+                          'z_score': False}
 
     # load images for training and pre-process
     images = putil.pre_process_batch(crawler.data, pre_process_params, multi_process=False)
@@ -78,10 +78,12 @@ def main(result_dir: str, data_atlas_dir: str, data_train_dir: str, data_test_di
     data_train = np.concatenate([img.feature_matrix[0] for img in images])
     labels_train = np.concatenate([img.feature_matrix[1] for img in images]).squeeze()
 
-    warnings.warn('Random forest parameters not properly set.')
+    np.random.seed(111)
+    #warnings.warn('Random forest parameters not properly set.')
     forest = sk_ensemble.RandomForestClassifier(max_features=images[0].feature_matrix[0].shape[1],
-                                                n_estimators=1,
-                                                max_depth=10)
+                                                n_estimators=8,
+                                                max_depth=8,
+                                                random_state = np.random.seed(111))
 
     start_time = timeit.default_timer()
     forest.fit(data_train, labels_train)

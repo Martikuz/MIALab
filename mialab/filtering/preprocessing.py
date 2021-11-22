@@ -6,7 +6,7 @@ import warnings
 
 import pymia.filtering.filter as pymia_fltr
 import SimpleITK as sitk
-
+import matplotlib.pyplot as plt
 # import for histogram matching
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,6 +15,11 @@ from skimage import data
 from skimage import exposure
 from skimage.exposure import match_histograms
 import intensity_normalization as im
+from typing import Tuple
+import numpy as np
+import statsmodels.api as sm
+from scipy.signal import argrelmax
+
 
 # *******************************************************************************************************************
 # ***************** BEGIN - Normalization ***************************************************************************
@@ -40,45 +45,196 @@ import intensity_normalization as im
 #                           'z_score': True}
 #
 class WhiteStripesBase(pymia_fltr.Filter):
+    """
+    intensity_normalization.util.histogram_tools
+    Process the histograms of MR (brain) images
+    Author: Jacob Reinhold (jcreinhold@gmail.com)
+    Created on: Jun 01, 2021
+    Adapted by Michael and Martin
+    """
+    def smooth_histogram(self,data) -> Tuple[np.ndarray, np.ndarray]:
+        """Use kernel density estimate to get smooth histogram
+        Args:
+            data: np.ndarray of image data
+        Returns:
+            grid: domain of the pdf
+            pdf: kernel density estimate of the pdf of data
+        """
+        data_vec = data.flatten().astype(np.float64)
+        bandwidth = data_vec.max() / 80  # noqa
+        kde = sm.nonparametric.KDEUnivariate(data_vec)
+        kde.fit(kernel="gau", bw=bandwidth, gridsize=80, fft=True)
+        pdf = 100.0 * kde.density
+        grid = kde.support
+        return grid, pdf
 
-    def post_execute_base(self) -> bool:
-        #img_arr = sitk.GetArrayFromImage(image)
-        #img_out = sitk.GetImageFromArray(img_arr)
-        #img_out.CopyInformation(image)
-        return True
 
-    def execute(self, image: sitk.Image, params: FilterParams = None) -> sitk.Image:
-        modality = "last"
-        width = 0.05
-        # if modality is None:
-        #    modality = "last"
-        # mask = sitk.GetArrayFromImage(self.mask)
-        # masked = data * mask
-        voi = image
-        wm_mode = im.get_tissue_mode(voi, modality)
-        wm_mode_quantile: float = np.mean(voi < wm_mode).item()
-        lower_bound = max(wm_mode_quantile - width, 0.0)
-        upper_bound = min(wm_mode_quantile + width, 1.0)
-        ws_l, ws_u = np.quantile(voi, (lower_bound, upper_bound))
-        whitestripe = (voi > ws_l) & (voi < ws_u)
-        # Necessary??
-        # img_out = sitk.GetImageFromArray(img_arr)
-        # img_out.CopyInformation(image)
-        return whitestripe
-        return image
+
+    def TestKDE(self):
+        nobs = 300
+        np.random.seed(1234)  # Seed random generator
+        dens = sm.nonparametric.KDEUnivariate(np.random.normal(size=nobs))
+        dens.fit()
+        plt.plot(dens.cdf)
+        plt.show()
+
+    def get_last_tissue_mode(self,data):
+        """Mode of the highest-intensity tissue class
+        Args:
+            data: image data
+            remove_tail: remove tail from histogram
+            tail_percentage: if remove_tail, use the
+                histogram below this percentage
+        Returns:
+            last_tissue_mode: mode of the highest-intensity tissue class
+        """
+        remove_tail= True
+        tail_percentage= 96.0
+        if remove_tail:
+            threshold = np.percentile(data, tail_percentage)
+            valid_mask = data >= threshold
+            data = data[valid_mask==0]
+        grid, pdf = self.smooth_histogram(data)
+        maxima = argrelmax(pdf)[0]
+        last_tissue_mode: float = grid[maxima[-1]]
+        #print("Argmax",np.argmax(pdf),"Applied to grid",grid[maxima[-1]] )
+        #print("T1:",last_tissue_mode)
+
+
+
+        return last_tissue_mode
+
+    def get_largest_tissue_mode(self, data) -> float:
+            """Mode of the largest tissue class
+            Args:
+                data: image data
+            Returns:
+                largest_tissue_mode (float): intensity of the mode
+            """
+            #threshold = np.percentile(data, 96)
+            #valid_mask = data >= threshold
+            #data = data[valid_mask == 0]
+            """"""
+            remove_tail = True
+            tail_percentage = 96.0
+            if remove_tail:
+                threshold = np.percentile(data, tail_percentage)
+                valid_mask = data >= threshold
+                data = data[valid_mask == 0]
+            grid, pdf = self.smooth_histogram(data)
+            #largest_tissue_mode = grid[np.argmax(pdf)]
+            #maxima = argrelmax(pdf)[0]
+            maxima = argrelmax(pdf)[0]
+            largest_tissue_mode = grid[maxima[1]]
+            #print("Min imagae:",np.min(data))
+            #print(np.argmax(pdf))
+            #print(grid[np.argmax(pdf)])
+            #plt.title("Histogram-Largest Tissue Mode")
+            #plt.xlabel("Intensity")
+            #plt.plot(grid,pdf)
+            #plt.show()
+            return largest_tissue_mode
+
+    def get_largest_tissue_modev2(self, data) -> float:
+        """Mode of the largest tissue class
+        Args:
+            data: image data
+        Returns:
+            largest_tissue_mode (float): intensity of the mode
+        """
+        # threshold = np.percentile(data, 96)
+        # valid_mask = data >= threshold
+        # data = data[valid_mask == 0]
+        grid, pdf = self.smooth_histogram(data)
+
+        largest_tissue_mode = grid[np.argmax(pdf)]
+        # largest_tissue_mode = grid[np.argmax(pdf)]
+        #print("Min imagae:", np.min(data))
+        #print(np.argmax(pdf))
+        #print(grid[np.argmax(pdf)])
+        #plt.title("Histogram-Largest Tissue Mode")
+        #plt.plot(pdf)
+        #plt.show()
+        return np.argmax(pdf)
+
+    def PlotBeforeAfter(self,image_Array_original,image_array):
+        fig, axs = plt.subplots(1,2)
+        fig.suptitle('Whitestripe normalization')
+        slice=100
+        axs[0].imshow(image_Array_original[slice, :, :])
+        axs[0].title.set_text('Raw image')
+        axs[1].imshow(image_array[slice, :, :])
+        axs[1].title.set_text('Normalized image')
+        plt.show()
+
+    def PlotHisto(self, image_Array_original, image_array):
+        fig, axs = plt.subplots(1, 2)
+        fig.suptitle('Whitestripe normalization histogram')
+        data0 = image_Array_original[image_Array_original > image_Array_original.mean()].flatten()
+        data1 = image_array[image_array > image_array.mean()].flatten()
+        colors = ['b', 'r']
+        axs[0].hist(data0, 400,color=colors[0])
+        axs[1].hist(data1, 400,color=colors[1])
+        #axs[2].hist([data0,data1], 400,color=colors, alpha=0.5)
+        axs[0].grid(True)
+        axs[1].grid(True)
+        plt.show()
+
+
+
 
 class WhiteStripesT1(WhiteStripesBase):
 
     def execute(self, image: sitk.Image, params: FilterParams = None) -> sitk.Image:
-        preprocessed_image = super().execute(image, params)
-        print(self.post_execute_base())
+        print("T1")
+        #super().TestKDE
+        #preprocessed_image = super().execute(image, params)
+        #Last-->T1
+        width = 0.05
+        image_array = sitk.GetArrayFromImage(image)
+        image_Array_original=image_array
+        wm_mode = super().get_last_tissue_mode(image_array)
+        test1=(image_array < wm_mode)
+        test2=np.mean(image_array < wm_mode)
+        wm_mode_quantile: float = np.mean(image_array < wm_mode).item()
+        lower_bound = max(wm_mode_quantile - width, 0.0)
+        upper_bound = min(wm_mode_quantile + width, 1.0)
+        ws_l, ws_u = np.quantile(image_array, (lower_bound, upper_bound))
+        whitestripe = (image_array > ws_l) & (image_array < ws_u)
+        mean = np.mean(image_array[whitestripe])
+        std = np.std(image_array[whitestripe])
+        image_array = (image_array - mean) / std
+        img_out = sitk.GetImageFromArray(image_array)
+        img_out.CopyInformation(image)
+        return img_out
 
 class WhiteStripesT2(WhiteStripesBase):
-    """Represents no norm normalization"""
+    """Represents WhiteStripesT2 normalization"""
+    #Largest-->T2
     def execute(self, image: sitk.Image, params: FilterParams = None) -> sitk.Image:
-        preprocessed_image = super().execute(image, params)
-        print(self.post_execute_base())
+        print("WhiteStripesT2-started")
+        width=0.05
+        image_array = sitk.GetArrayFromImage(image)
+        mtest3=np.min(image_array)
+        wm_mode = super().get_largest_tissue_mode(image_array)
+        if wm_mode>0:
+            wm_mode_quantile: float = np.mean(image_array < wm_mode).item()
+            lower_bound = max(wm_mode_quantile - width, 0.0)
+            upper_bound = min(wm_mode_quantile + width, 1.0)
+        else:
+            lower_bound=0
+            upper_bound=0.1
+       # print("Bounds are:",lower_bound,upper_bound)
+        ws_l, ws_u = np.quantile(image_array, (lower_bound, upper_bound))
+        #print("For the quantile:",lower_bound," to ",upper_bound,"the values are: ",ws_l,"to ",ws_u)
 
+        whitestripe_ind = (image_array > ws_l) & (image_array < ws_u)
+        mean = np.mean(image_array[whitestripe_ind])
+        std = np.std(image_array[whitestripe_ind])
+        image_array = (image_array - mean) / std
+        img_out = sitk.GetImageFromArray(image_array)
+        img_out.CopyInformation(image)
+        return img_out
 
 class NoNormalization(pymia_fltr.Filter):
     """Represents no norm normalization"""
@@ -92,7 +248,6 @@ class ZScore(pymia_fltr.Filter):
         mean = img_arr.mean()
         std = img_arr.std()
         img_arr = (img_arr - mean) / std
-
         img_out = sitk.GetImageFromArray(img_arr)
         img_out.CopyInformation(image)
         return img_out
@@ -135,12 +290,13 @@ class HistogramMatching2(pymia_fltr.Filter):
         #         r_val = img_arr[xit,yit,zit]
         #         nj_val = None #histogram value of r_val[xit,yit,zit]
         #         pdfr_arr[xit,yit,zit] = nj_val/n_val
+        sitk.HistogramMatching()
+
         # img_arr = pdfr_arr
 
         img_out = sitk.GetImageFromArray(img_arr)
         img_out.CopyInformation(image)
         return img_out
-
 
 #----------------------------------------------------------------------
 #----------------------------------------------------------------------

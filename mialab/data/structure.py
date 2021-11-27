@@ -13,6 +13,8 @@ class BrainImageTypes(enum.Enum):
     BrainMask = 4  #: The brain mask image.
     RegistrationTransform = 5  #: The registration transformation
 
+    print('***Stru BrainImageTypes')
+
 
 class BrainImage:
     """Represents a brain image."""
@@ -41,3 +43,5 @@ class BrainImage:
         self.feature_matrix = None  # a tuple (features, labels),
         # where the shape of features is (n, number_of_features) and the shape of labels is (n, 1)
         # with n being the amount of voxels
+
+    print('***Stru BrainImage')

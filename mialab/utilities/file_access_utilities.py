@@ -29,6 +29,8 @@ class FilePathGenerator(metaclass=abc.ABCMeta):
                 """
         raise NotImplementedError()
 
+    print('***FAU FilePathGenerator')
+
 
 class BrainImageFilePathGenerator(FilePathGenerator):
     """Represents a brain image file path generator.
@@ -72,6 +74,8 @@ class BrainImageFilePathGenerator(FilePathGenerator):
 
         return os.path.join(root_dir, file_name + file_extension)
 
+    print('***FAU BrainImageFilePathGenerator')
+
 
 class DirectoryFilter(metaclass=abc.ABCMeta):
     """Represents an abstract directory filter.
@@ -91,6 +95,8 @@ class DirectoryFilter(metaclass=abc.ABCMeta):
             List[str]: The filtered list of directories.
         """
         raise NotImplementedError()
+
+    print('***FAU DirectoryFilter')
 
 
 class DataDirectoryFilter(DirectoryFilter):
@@ -117,6 +123,8 @@ class DataDirectoryFilter(DirectoryFilter):
         # currently, we do not filter the directories. but you could filter the directory list like this:
         # return [dir for dir in dirs if not dir.lower().__contains__('atlas')]
         return dirs
+
+    print('***FAU DataDirectoryFilter')
 
 
 class FileSystemDataCrawler:
@@ -241,3 +249,5 @@ class FileSystemDataCrawler:
             if any(file.endswith(self.file_extension) for file  # check if directory contains data files
                    in os.listdir(os.path.join(self.root_dir, data_dir)))
         }
+
+    print('***FAU FileSystemDataCrawler')

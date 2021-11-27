@@ -59,16 +59,17 @@ def main(result_dir: str, data_atlas_dir: str, data_train_dir: str, data_test_di
                                           LOADING_KEYS,
                                           futil.BrainImageFilePathGenerator(),
                                           futil.DataDirectoryFilter())
+
     pre_process_params = {'skullstrip_pre': True,
                           'normalization_pre': True,
                           'registration_pre': True,
                           'coordinates_feature': True,
                           'intensity_feature': True,
                           'gradient_intensity_feature': True,
-                          'white_stripes': True,
+                          'white_stripes': False,
                           'no_normalization': False,
                           'histogram_matching_1': False,
-                          'histogram_matching_2': False,
+                          'histogram_matching_2': True,
                           'z_score': False}
 
     # load images for training and pre-process
@@ -78,12 +79,10 @@ def main(result_dir: str, data_atlas_dir: str, data_train_dir: str, data_test_di
     data_train = np.concatenate([img.feature_matrix[0] for img in images])
     labels_train = np.concatenate([img.feature_matrix[1] for img in images]).squeeze()
 
-    np.random.seed(111)
-    #warnings.warn('Random forest parameters not properly set.')
+    warnings.warn('Random forest parameters not properly set.')
     forest = sk_ensemble.RandomForestClassifier(max_features=images[0].feature_matrix[0].shape[1],
-                                                n_estimators=8,
-                                                max_depth=8,
-                                                random_state = np.random.seed(111))
+                                                n_estimators=1,
+                                                max_depth=5)
 
     start_time = timeit.default_timer()
     forest.fit(data_train, labels_train)

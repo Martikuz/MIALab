@@ -21,6 +21,7 @@ class PicklableAffineTransform:
         transform.SetParameters(self.parameters)
         return transform
 
+    print('***MP PicklableAffineTransform')
 
 class PicklableBrainImage:
     """Represents a brain image that can be pickled."""
@@ -45,6 +46,8 @@ class PicklableBrainImage:
         # where the shape of features is (n, number_of_features) and the shape of labels is (n, 1)
         # with n being the amount of voxels
         self.pickable_transform = PicklableAffineTransform(transform)
+
+    print('***MP PicklableBrainImage')
 
 
 class BrainImageToPicklableBridge:
@@ -76,6 +79,8 @@ class BrainImageToPicklableBridge:
 
         return pickable_brain_image
 
+    print('***MP BrainImageToPicklableBridge')
+
 
 class PicklableToBrainImageBridge:
     """A :class:`PicklableBrainImage` to :class:`BrainImage <data.structure.BrainImage>` bridge."""
@@ -105,6 +110,8 @@ class PicklableToBrainImageBridge:
         brain_image = structure.BrainImage(picklable_brain_image.id_, picklable_brain_image.path, images, transform)
         brain_image.feature_matrix = picklable_brain_image.feature_matrix
         return brain_image
+
+    print('***MP PicklableToBrainImageBridge')
 
 
 class DefaultPickleHelper:
@@ -160,6 +167,8 @@ class DefaultPickleHelper:
         """
         return ret_val
 
+    print('***MP DefaultPickleHelper')
+
 
 class PreProcessingPickleHelper(DefaultPickleHelper):
     """Pre-processing pickle helper class"""
@@ -187,6 +196,8 @@ class PreProcessingPickleHelper(DefaultPickleHelper):
             BrainImage: The recovered pre-processing return values.
         """
         return PicklableToBrainImageBridge.convert(ret_val)
+
+    print('***MP PreProcessingPickleHelper')
 
 
 class PostProcessingPickleHelper(DefaultPickleHelper):
@@ -248,6 +259,8 @@ class PostProcessingPickleHelper(DefaultPickleHelper):
         np_img, image_properties = ret_val
         return conversion.NumpySimpleITKImageBridge.convert(np_img, image_properties)
 
+    print('***MP PostProcessingPickleHelper')
+
 
 class MultiProcessor:
     """Class managing multiprocessing"""
@@ -290,3 +303,5 @@ class MultiProcessor:
             return ret_val
 
         return wrapped_fn
+
+    print('***MP MultiProcessor')

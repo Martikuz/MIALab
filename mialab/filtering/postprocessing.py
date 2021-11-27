@@ -18,6 +18,8 @@ class ImagePostProcessing(pymia_fltr.Filter):
         """Initializes a new instance of the ImagePostProcessing class."""
         super().__init__()
 
+        print('******* init ImagePostProcessing')
+
     def execute(self, image: sitk.Image, params: pymia_fltr.FilterParams = None) -> sitk.Image:
         """Registers an image.
 
@@ -30,7 +32,9 @@ class ImagePostProcessing(pymia_fltr.Filter):
         """
 
         # todo: replace this filter by a post-processing - or do we need post-processing at all?
-        #warnings.warn('No post-processing implemented. Can you think about something?')
+        warnings.warn('No post-processing implemented. Can you think about something?')
+
+        print('******* execute ImagePostProcessing')
 
         return image
 
@@ -40,8 +44,13 @@ class ImagePostProcessing(pymia_fltr.Filter):
         Returns:
             str: String representation.
         """
+
+        print('******* str ImagePostProcessing')
+
         return 'ImagePostProcessing:\n' \
             .format(self=self)
+
+    print('******* ImagePostProcessing')
 
 
 # class DenseCRFParams(pymia_fltr.FilterParams):

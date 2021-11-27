@@ -2,7 +2,6 @@
 import enum
 import os
 import typing as t
-import warnings
 
 import numpy as np
 import pymia.data.conversion as conversion
@@ -17,6 +16,7 @@ import mialab.filtering.postprocessing as fltr_postp
 import mialab.filtering.preprocessing as fltr_prep
 import mialab.utilities.multi_processor as mproc
 
+import matplotlib.pyplot as plt
 
 atlas_t1 = sitk.Image()
 atlas_t2 = sitk.Image()
@@ -31,10 +31,47 @@ def load_atlas_images(directory: str):
 
     global atlas_t1
     global atlas_t2
-    atlas_t1 = sitk.ReadImage(os.path.join(directory, 'mni_icbm152_t1_tal_nlin_sym_09a_mask.nii.gz'))
+    # atlas_t1 = sitk.ReadImage(os.path.join(directory, 'mni_icbm152_t1_tal_nlin_sym_09a_mask.nii.gz'))
+    atlas_t1 = sitk.ReadImage(os.path.join(directory, 'mni_icbm152_t1_tal_nlin_sym_09a.nii.gz'))  # changed by Martin
     atlas_t2 = sitk.ReadImage(os.path.join(directory, 'mni_icbm152_t2_tal_nlin_sym_09a.nii.gz'))
     if not conversion.ImageProperties(atlas_t1) == conversion.ImageProperties(atlas_t2):
         raise ValueError('T1w and T2w atlas images have not the same image properties')
+
+    print('*** load_atlas_images')
+
+    # Martin
+    at1 = sitk.GetArrayFromImage(atlas_t1)
+    at2 = sitk.GetArrayFromImage(atlas_t2)
+
+    # show image
+    fig, axs = plt.subplots(1, 2)
+    fig.suptitle('atlas')
+    slice = 100
+    axs[0].imshow(at1[slice, :, :])
+    axs[0].title.set_text('atlas t1')
+    axs[1].imshow(at2[slice, :, :])
+    axs[1].title.set_text('atlas t2')
+    plt.show()
+
+    # histoplot
+    histoplt = np.histogram(at1, bins=10, range=None, normed=None, weights=None, density=None)
+    _ = plt.hist(histoplt, bins='auto')
+    plt.title("atlas Histogram with 'auto' bins")
+    plt.show()
+
+    # histoplot better
+    fig, axs = plt.subplots(1, 2)
+    fig.suptitle('atlas histograms')
+    data0 = at1[at1 > at1.mean()].flatten()
+    data1 = at2[at2 > at2.mean()].flatten()
+    colors = ['b', 'r']
+    axs[0].hist(data0, 400, color=colors[0])
+    axs[0].title.set_text('atlas_t1')
+    axs[1].hist(data1, 400, color=colors[1])
+    axs[1].title.set_text('atlas_t2')
+    axs[0].grid(True)
+    axs[1].grid(True)
+    plt.show()
 
 
 class FeatureImageTypes(enum.Enum):
@@ -45,6 +82,7 @@ class FeatureImageTypes(enum.Enum):
     T1w_GRADIENT_INTENSITY = 3
     T2w_INTENSITY = 4
     T2w_GRADIENT_INTENSITY = 5
+    print('*** FeatureImageTypes')
 
 
 class FeatureExtractor:
@@ -61,6 +99,7 @@ class FeatureExtractor:
         self.coordinates_feature = kwargs.get('coordinates_feature', False)
         self.intensity_feature = kwargs.get('intensity_feature', False)
         self.gradient_intensity_feature = kwargs.get('gradient_intensity_feature', False)
+        print('*** init FeatureExtractor')
 
     def execute(self) -> structure.BrainImage:
         """Extracts features from an image.
@@ -69,13 +108,13 @@ class FeatureExtractor:
             structure.BrainImage: The image with extracted features.
         """
         # todo: add T2w features
-        #warnings.warn('No features from T2-weighted image extracted.')
+        # warnings.warn('No features from T2-weighted image extracted.')
 
         if self.coordinates_feature:
             atlas_coordinates = fltr_feat.AtlasCoordinates()
             self.img.feature_images[FeatureImageTypes.ATLAS_COORD] = \
                 atlas_coordinates.execute(self.img.images[structure.BrainImageTypes.T1w])
-                # atlas for T2w seems to stay the same...
+            # atlas for T2w seems to stay the same...
 
         if self.intensity_feature:
             self.img.feature_images[FeatureImageTypes.T1w_INTENSITY] = self.img.images[structure.BrainImageTypes.T1w]
@@ -89,6 +128,7 @@ class FeatureExtractor:
                 sitk.GradientMagnitude(self.img.images[structure.BrainImageTypes.T2w])
 
         self._generate_feature_matrix()
+        print('*** execute FeatureExtractor')
 
         return self.img
 
@@ -130,6 +170,8 @@ class FeatureExtractor:
 
         self.img.feature_matrix = (data.astype(np.float32), labels.astype(np.int16))
 
+        print('*** generate_feature_matrix FeatureExtractor')
+
     @staticmethod
     def _image_as_numpy_array(image: sitk.Image, mask: np.ndarray = None):
         """Gets an image as numpy array where each row is a voxel and each column is a feature.
@@ -160,7 +202,11 @@ class FeatureExtractor:
 
             image = masked_image[~masked_image.mask]
 
+        print('*** image_as_numpy_array FeatureExtractor')
+
         return image.reshape((no_voxels, number_of_components))
+
+    print('*** FeatureExtractor')
 
 
 def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
@@ -190,6 +236,18 @@ def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
     transform = sitk.ReadTransform(path_to_transform)
     img = structure.BrainImage(id_, path, img, transform)
 
+    # load reference image
+    # TODO
+    reference_image_dir_path = 'E:/01_Programme/Git/00_MyFolder/MIALab/data/train/100307/'
+    reference_t1_path = os.path.join(reference_image_dir_path, 'T1native.nii.gz')
+    reference_t2_path = os.path.join(reference_image_dir_path, 'T2native.nii.gz')
+    reference_t1_transform_path = 'E:/01_Programme/Git/00_MyFolder/MIALab/data/train/100307/affine.txt'
+    reference_img = structure.BrainImage('Reference',
+                                         reference_image_dir_path,
+                                         {structure.BrainImageTypes.T1w: sitk.ReadImage(reference_t1_path),
+                                          structure.BrainImageTypes.T2w: sitk.ReadImage(reference_t2_path)},
+                                         sitk.ReadTransform(reference_t1_transform_path))
+
     # construct pipeline for brain mask registration
     # we need to perform this before the T1w and T2w pipeline because the registered mask is used for skull-stripping
     pipeline_brain_mask = fltr.FilterPipeline()
@@ -202,9 +260,21 @@ def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
     img.images[structure.BrainImageTypes.BrainMask] = pipeline_brain_mask.execute(
         img.images[structure.BrainImageTypes.BrainMask])
 
+    # construct pipeline for T1w reference image pre-processing
+    # TODO Remove
+    pipeline_t1_ref = fltr.FilterPipeline()
+    if kwargs.get('registration_pre', False):
+        pipeline_t1_ref.add_filter(fltr_prep.ImageRegistration())
+        pipeline_t1_ref.set_param(fltr_prep.ImageRegistrationParameters(atlas_t1, img.transformation),
+                                  len(pipeline_t1_ref.filters) - 1)
+    if kwargs.get('skullstrip_pre', False):
+        pipeline_t1_ref.add_filter(fltr_prep.SkullStripping())
+        pipeline_t1_ref.set_param(fltr_prep.SkullStrippingParameters(img.images[structure.BrainImageTypes.BrainMask]),
+                                  len(pipeline_t1_ref.filters) - 1)
+    reference_t1_img = pipeline_t1_ref.execute(reference_img.images[structure.BrainImageTypes.T1w])
+    normalization_parameters_t1 = fltr_prep.NormalizationParameters(reference_t1_img)
+
     # construct pipeline for T1w image pre-processing
-    #-------------------------------------------------------
-    #Start of the adaptation
     pipeline_t1 = fltr.FilterPipeline()
     if kwargs.get('registration_pre', False):
         pipeline_t1.add_filter(fltr_prep.ImageRegistration())
@@ -214,20 +284,36 @@ def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
         pipeline_t1.add_filter(fltr_prep.SkullStripping())
         pipeline_t1.set_param(fltr_prep.SkullStrippingParameters(img.images[structure.BrainImageTypes.BrainMask]),
                               len(pipeline_t1.filters) - 1)
+
     if kwargs.get('normalization_pre', False):
         if kwargs.get('white_stripes', False):
-            pipeline_t1.add_filter(fltr_prep.WhiteStripesT1())#mask=kwargs.get('t1_mask', None))
+            pipeline_t1.add_filter(fltr_prep.WhiteStripesT1())  # mask=kwargs.get('t1_mask', None))
         elif kwargs.get('no_normalization', False):
             pipeline_t1.add_filter(fltr_prep.NoNormalization())
         elif kwargs.get('histogram_matching_1', False):
             pipeline_t1.add_filter(fltr_prep.HistogramMatching1())
         elif kwargs.get('histogram_matching_2', False):
-            pipeline_t1.add_filter(fltr_prep.HistogramMatching2())
+            pipeline_t1.add_filter(fltr_prep.ImageNormalization())
         elif kwargs.get('z_score', False):
             pipeline_t1.add_filter(fltr_prep.ZScore())
+        pipeline_t1.set_param(normalization_parameters_t1, len(pipeline_t1.filters) - 1)
 
     # execute pipeline on the T1w image
     img.images[structure.BrainImageTypes.T1w] = pipeline_t1.execute(img.images[structure.BrainImageTypes.T1w])
+
+    # construct pipeline for T2w reference image pre-processing
+    # TODO Remove
+    pipeline_t2_ref = fltr.FilterPipeline()
+    if kwargs.get('registration_pre', False):
+        pipeline_t2_ref.add_filter(fltr_prep.ImageRegistration())
+        pipeline_t2_ref.set_param(fltr_prep.ImageRegistrationParameters(atlas_t2, img.transformation),
+                                  len(pipeline_t2_ref.filters) - 1)
+    if kwargs.get('skullstrip_pre', False):
+        pipeline_t2_ref.add_filter(fltr_prep.SkullStripping())
+        pipeline_t2_ref.set_param(fltr_prep.SkullStrippingParameters(img.images[structure.BrainImageTypes.BrainMask]),
+                                  len(pipeline_t2_ref.filters) - 1)
+    reference_t2_img = pipeline_t2_ref.execute(reference_img.images[structure.BrainImageTypes.T1w])
+    normalization_parameters_t2 = fltr_prep.NormalizationParameters(reference_t2_img)
 
     # construct pipeline for T2w image pre-processing
     pipeline_t2 = fltr.FilterPipeline()
@@ -241,18 +327,18 @@ def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
                               len(pipeline_t2.filters) - 1)
     if kwargs.get('normalization_pre', False):
         if kwargs.get('white_stripes', False):
-            pipeline_t2.add_filter(fltr_prep.WhiteStripesT2())#mask=kwargs.get('t1_mask', None))
+            pipeline_t2.add_filter(fltr_prep.WhiteStripesT2())  # mask=kwargs.get('t1_mask', None))
         elif kwargs.get('no_normalization', False):
             pipeline_t2.add_filter(fltr_prep.NoNormalization())
         elif kwargs.get('histogram_matching_1', False):
             pipeline_t2.add_filter(fltr_prep.HistogramMatching1())
         elif kwargs.get('histogram_matching_2', False):
-            pipeline_t2.add_filter(fltr_prep.HistogramMatching2())
+            pipeline_t2.add_filter(fltr_prep.ImageNormalization())
         elif kwargs.get('z_score', False):
             pipeline_t2.add_filter(fltr_prep.ZScore())
+        pipeline_t2.set_param(normalization_parameters_t2,
+                              len(pipeline_t2.filters) - 1)
 
-    #End of adaptation
-    #------------------------------------------------------------------------------
     # execute pipeline on the T2w image
     img.images[structure.BrainImageTypes.T2w] = pipeline_t2.execute(img.images[structure.BrainImageTypes.T2w])
 
@@ -276,6 +362,8 @@ def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
 
     img.feature_images = {}  # we free up memory because we only need the img.feature_matrix
     # for training of the classifier
+
+    print('*** pre_process')
 
     return img
 
@@ -305,6 +393,8 @@ def post_process(img: structure.BrainImage, segmentation: sitk.Image, probabilit
                                                      img.images[structure.BrainImageTypes.T2w],
                                                      probability), len(pipeline.filters) - 1)
 
+    print('*** post_process')
+
     return pipeline.execute(segmentation)
 
 
@@ -321,8 +411,9 @@ def init_evaluator() -> eval_.Evaluator:
     # mk: added code that add the element VolumeSimilarity to the list with:
     #     metric.VolumeSimilarity() according the pymia documentation on:
     #     https://pymia.readthedocs.io/en/latest/examples.evaluation.basic.html
-    metrics = [metric.DiceCoefficient(), metric.HausdorffDistance(percentile=95, metric='HDRFDST95'), metric.VolumeSimilarity()]
-    #warnings.warn('Initialized evaluation with the Dice coefficient. Do you know other suitable metrics?')
+    metrics = [metric.DiceCoefficient(), metric.HausdorffDistance(percentile=95, metric='HDRFDST95'),
+               metric.VolumeSimilarity()]
+    # warnings.warn('Initialized evaluation with the Dice coefficient. Do you know other suitable metrics?')
 
     # define the labels to evaluate
     labels = {1: 'WhiteMatter',
@@ -333,6 +424,9 @@ def init_evaluator() -> eval_.Evaluator:
               }
 
     evaluator = eval_.SegmentationEvaluator(metrics, labels)
+
+    print('*** init_evaluator')
+
     return evaluator
 
 
@@ -362,6 +456,9 @@ def pre_process_batch(data_batch: t.Dict[structure.BrainImageTypes, structure.Br
         images = mproc.MultiProcessor.run(pre_process, params_list, pre_process_params, mproc.PreProcessingPickleHelper)
     else:
         images = [pre_process(id_, path, **pre_process_params) for id_, path in params_list]
+
+    print('*** pre_process_batch')
+
     return images
 
 
@@ -389,4 +486,7 @@ def post_process_batch(brain_images: t.List[structure.BrainImage], segmentations
                                              mproc.PostProcessingPickleHelper)
     else:
         pp_images = [post_process(img, seg, prob, **post_process_params) for img, seg, prob in param_list]
+
+    print('*** post_process_batch')
+
     return pp_images

@@ -15,6 +15,7 @@ import numpy as np
 import pymia.data.conversion as conversion
 import pymia.evaluation.writer as writer
 
+
 try:
     import mialab.data.structure as structure
     import mialab.utilities.file_access_utilities as futil

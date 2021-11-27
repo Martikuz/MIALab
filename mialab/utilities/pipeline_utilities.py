@@ -44,34 +44,34 @@ def load_atlas_images(directory: str):
     at2 = sitk.GetArrayFromImage(atlas_t2)
 
     # show image
-    fig, axs = plt.subplots(1, 2)
-    fig.suptitle('atlas')
-    slice = 100
-    axs[0].imshow(at1[slice, :, :])
-    axs[0].title.set_text('atlas t1')
-    axs[1].imshow(at2[slice, :, :])
-    axs[1].title.set_text('atlas t2')
-    plt.show()
+    # fig, axs = plt.subplots(1, 2)
+    # fig.suptitle('atlas')
+    # slice = 100
+    # axs[0].imshow(at1[slice, :, :])
+    # axs[0].title.set_text('atlas t1')
+    # axs[1].imshow(at2[slice, :, :])
+    # axs[1].title.set_text('atlas t2')
+    # plt.show()
 
     # histoplot
-    histoplt = np.histogram(at1, bins=10, range=None, normed=None, weights=None, density=None)
-    _ = plt.hist(histoplt, bins='auto')
-    plt.title("atlas Histogram with 'auto' bins")
-    plt.show()
+    # histoplt = np.histogram(at1, bins=10, range=None, normed=None, weights=None, density=None)
+    # _ = plt.hist(histoplt, bins='auto')
+    # plt.title("atlas Histogram with 'auto' bins")
+    # plt.show()
 
     # histoplot better
-    fig, axs = plt.subplots(1, 2)
-    fig.suptitle('atlas histograms')
-    data0 = at1[at1 > at1.mean()].flatten()
-    data1 = at2[at2 > at2.mean()].flatten()
-    colors = ['b', 'r']
-    axs[0].hist(data0, 400, color=colors[0])
-    axs[0].title.set_text('atlas_t1')
-    axs[1].hist(data1, 400, color=colors[1])
-    axs[1].title.set_text('atlas_t2')
-    axs[0].grid(True)
-    axs[1].grid(True)
-    plt.show()
+    # fig, axs = plt.subplots(1, 2)
+    # fig.suptitle('atlas histograms')
+    # data0 = at1[at1 > at1.mean()].flatten()
+    # data1 = at2[at2 > at2.mean()].flatten()
+    # colors = ['b', 'r']
+    # axs[0].hist(data0, 400, color=colors[0])
+    # axs[0].title.set_text('atlas_t1')
+    # axs[1].hist(data1, 400, color=colors[1])
+    # axs[1].title.set_text('atlas_t2')
+    # axs[0].grid(True)
+    # axs[1].grid(True)
+    # plt.show()
 
 
 class FeatureImageTypes(enum.Enum):

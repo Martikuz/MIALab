@@ -46,7 +46,7 @@ def smooth_histogram(data: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     pdf = 100.0 * kde.density
     grid = kde.support
 
-    print('*******IN smooth_histogram')
+    # print('*******IN smooth_histogram')
 
     return grid, pdf
 
@@ -61,7 +61,7 @@ def get_largest_tissue_mode(data: np.ndarray) -> float:
     grid, pdf = smooth_histogram(data)
     largest_tissue_mode: float = grid[np.argmax(pdf)]
 
-    print('*******IN get_largest_tissue_mode')
+    # print('*******IN get_largest_tissue_mode')
 
     return largest_tissue_mode
 
@@ -88,7 +88,7 @@ def get_last_tissue_mode(
     maxima = argrelmax(pdf)[0]
     last_tissue_mode: float = grid[maxima[-1]]
 
-    print('*******IN get_last_tissue_mode')
+    # print('*******IN get_last_tissue_mode')
 
     return last_tissue_mode
 
@@ -115,7 +115,7 @@ def get_first_tissue_mode(
     maxima = argrelmax(pdf)[0]
     first_tissue_mode: float = grid[maxima[0]]
 
-    print('*******IN get_first_tissue_mode')
+    # print('*******IN get_first_tissue_mode')
 
     return first_tissue_mode
 
@@ -134,6 +134,6 @@ def get_tissue_mode(data: np.ndarray, modality: str) -> float:
         msg = f"Modality {modality} not valid. Needs to be one of {modalities}."
         print(msg)
 
-    print('*******IN get_tissue_mode')
+    # print('*******IN get_tissue_mode')
 
     return mode

@@ -29,7 +29,7 @@ class FilePathGenerator(metaclass=abc.ABCMeta):
                 """
         raise NotImplementedError()
 
-    print('***FAU FilePathGenerator')
+    # print('***FAU FilePathGenerator')
 
 
 class BrainImageFilePathGenerator(FilePathGenerator):
@@ -74,7 +74,7 @@ class BrainImageFilePathGenerator(FilePathGenerator):
 
         return os.path.join(root_dir, file_name + file_extension)
 
-    print('***FAU BrainImageFilePathGenerator')
+    # print('***FAU BrainImageFilePathGenerator')
 
 
 class DirectoryFilter(metaclass=abc.ABCMeta):
@@ -96,7 +96,7 @@ class DirectoryFilter(metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
 
-    print('***FAU DirectoryFilter')
+    # print('***FAU DirectoryFilter')
 
 
 class DataDirectoryFilter(DirectoryFilter):
@@ -124,7 +124,7 @@ class DataDirectoryFilter(DirectoryFilter):
         # return [dir for dir in dirs if not dir.lower().__contains__('atlas')]
         return dirs
 
-    print('***FAU DataDirectoryFilter')
+    # print('***FAU DataDirectoryFilter')
 
 
 class FileSystemDataCrawler:
@@ -250,4 +250,4 @@ class FileSystemDataCrawler:
                    in os.listdir(os.path.join(self.root_dir, data_dir)))
         }
 
-    print('***FAU FileSystemDataCrawler')
+    # print('***FAU FileSystemDataCrawler')

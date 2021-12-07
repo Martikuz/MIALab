@@ -37,7 +37,7 @@ def load_atlas_images(directory: str):
     if not conversion.ImageProperties(atlas_t1) == conversion.ImageProperties(atlas_t2):
         raise ValueError('T1w and T2w atlas images have not the same image properties')
 
-    print('*** load_atlas_images')
+    # print('*** load_atlas_images')
 
     # Martin
     at1 = sitk.GetArrayFromImage(atlas_t1)
@@ -82,7 +82,7 @@ class FeatureImageTypes(enum.Enum):
     T1w_GRADIENT_INTENSITY = 3
     T2w_INTENSITY = 4
     T2w_GRADIENT_INTENSITY = 5
-    print('*** FeatureImageTypes')
+    # print('*** FeatureImageTypes')
 
 
 class FeatureExtractor:
@@ -99,7 +99,7 @@ class FeatureExtractor:
         self.coordinates_feature = kwargs.get('coordinates_feature', False)
         self.intensity_feature = kwargs.get('intensity_feature', False)
         self.gradient_intensity_feature = kwargs.get('gradient_intensity_feature', False)
-        print('*** init FeatureExtractor')
+        # print('*** init FeatureExtractor')
 
     def execute(self) -> structure.BrainImage:
         """Extracts features from an image.
@@ -128,7 +128,7 @@ class FeatureExtractor:
                 sitk.GradientMagnitude(self.img.images[structure.BrainImageTypes.T2w])
 
         self._generate_feature_matrix()
-        print('*** execute FeatureExtractor')
+        # print('*** execute FeatureExtractor')
 
         return self.img
 
@@ -170,7 +170,7 @@ class FeatureExtractor:
 
         self.img.feature_matrix = (data.astype(np.float32), labels.astype(np.int16))
 
-        print('*** generate_feature_matrix FeatureExtractor')
+        # print('*** generate_feature_matrix FeatureExtractor')
 
     @staticmethod
     def _image_as_numpy_array(image: sitk.Image, mask: np.ndarray = None):
@@ -202,11 +202,11 @@ class FeatureExtractor:
 
             image = masked_image[~masked_image.mask]
 
-        print('*** image_as_numpy_array FeatureExtractor')
+        # print('*** image_as_numpy_array FeatureExtractor')
 
         return image.reshape((no_voxels, number_of_components))
 
-    print('*** FeatureExtractor')
+    # print('*** FeatureExtractor')
 
 
 def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
@@ -241,12 +241,14 @@ def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
     reference_image_dir_path = 'E:/01_Programme/Git/00_MyFolder/MIALab/data/train/100307/'
     reference_t1_path = os.path.join(reference_image_dir_path, 'T1native.nii.gz')
     reference_t2_path = os.path.join(reference_image_dir_path, 'T2native.nii.gz')
-    reference_t1_transform_path = 'E:/01_Programme/Git/00_MyFolder/MIALab/data/train/100307/affine.txt'
+    reference_brain_mask_path = os.path.join(reference_image_dir_path, 'Brainmasknative.nii.gz')
+    reference_transform_path = 'E:/01_Programme/Git/00_MyFolder/MIALab/data/train/100307/affine.txt'
     reference_img = structure.BrainImage('Reference',
                                          reference_image_dir_path,
                                          {structure.BrainImageTypes.T1w: sitk.ReadImage(reference_t1_path),
-                                          structure.BrainImageTypes.T2w: sitk.ReadImage(reference_t2_path)},
-                                         sitk.ReadTransform(reference_t1_transform_path))
+                                          structure.BrainImageTypes.T2w: sitk.ReadImage(reference_t2_path),
+                                          structure.BrainImageTypes.BrainMask: sitk.ReadImage(reference_brain_mask_path)},
+                                          sitk.ReadTransform(reference_transform_path))
 
     # construct pipeline for brain mask registration
     # we need to perform this before the T1w and T2w pipeline because the registered mask is used for skull-stripping
@@ -260,19 +262,26 @@ def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
     img.images[structure.BrainImageTypes.BrainMask] = pipeline_brain_mask.execute(
         img.images[structure.BrainImageTypes.BrainMask])
 
+    # construct pipeline for the reference image
+    pipeline_ref_brain_mask = fltr.FilterPipeline()
+    if kwargs.get('registration_pre', False):
+        pipeline_ref_brain_mask.add_filter(fltr_prep.ImageRegistration())
+        pipeline_ref_brain_mask.set_param(fltr_prep.ImageRegistrationParameters(atlas_t1, reference_img.transformation, True),
+                                          len(pipeline_ref_brain_mask.filters) - 1)
+    reference_img.images[structure.BrainImageTypes.BrainMask] = pipeline_ref_brain_mask.execute(reference_img.images[structure.BrainImageTypes.BrainMask])
+
     # construct pipeline for T1w reference image pre-processing
-    # TODO Remove
     pipeline_t1_ref = fltr.FilterPipeline()
     if kwargs.get('registration_pre', False):
         pipeline_t1_ref.add_filter(fltr_prep.ImageRegistration())
-        pipeline_t1_ref.set_param(fltr_prep.ImageRegistrationParameters(atlas_t1, img.transformation),
+        pipeline_t1_ref.set_param(fltr_prep.ImageRegistrationParameters(atlas_t1, reference_img.transformation),
                                   len(pipeline_t1_ref.filters) - 1)
     if kwargs.get('skullstrip_pre', False):
         pipeline_t1_ref.add_filter(fltr_prep.SkullStripping())
-        pipeline_t1_ref.set_param(fltr_prep.SkullStrippingParameters(img.images[structure.BrainImageTypes.BrainMask]),
+        pipeline_t1_ref.set_param(fltr_prep.SkullStrippingParameters(reference_img.images[structure.BrainImageTypes.BrainMask]),
                                   len(pipeline_t1_ref.filters) - 1)
-    reference_t1_img = pipeline_t1_ref.execute(reference_img.images[structure.BrainImageTypes.T1w])
-    normalization_parameters_t1 = fltr_prep.NormalizationParameters(reference_t1_img)
+    reference_img.images[structure.BrainImageTypes.T1w] = pipeline_t1_ref.execute(reference_img.images[structure.BrainImageTypes.T1w])
+    normalization_parameters_t1 = fltr_prep.NormalizationParameters(reference_img.images[structure.BrainImageTypes.T1w])
 
     # construct pipeline for T1w image pre-processing
     pipeline_t1 = fltr.FilterPipeline()
@@ -286,17 +295,23 @@ def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
                               len(pipeline_t1.filters) - 1)
 
     if kwargs.get('normalization_pre', False):
+        filter_params = fltr_prep.NormalizationParameters(reference_img.images[structure.BrainImageTypes.T1w], img.id_)
         if kwargs.get('white_stripes', False):
-            pipeline_t1.add_filter(fltr_prep.WhiteStripesT1())  # mask=kwargs.get('t1_mask', None))
+            pipeline_t1.add_filter(fltr_prep.WhiteStripesT1())
+            pipeline_t1.set_param(filter_params, len(pipeline_t1.filters) - 1)
         elif kwargs.get('no_normalization', False):
             pipeline_t1.add_filter(fltr_prep.NoNormalization())
+            pipeline_t1.set_param(filter_params, len(pipeline_t1.filters) - 1)
         elif kwargs.get('histogram_matching_1', False):
-            pipeline_t1.add_filter(fltr_prep.HistogramMatching1())
+            pipeline_t1.add_filter(fltr_prep.HistogramMatching())
+            pipeline_t1.set_param(filter_params, len(pipeline_t1.filters) - 1)
         elif kwargs.get('histogram_matching_2', False):
             pipeline_t1.add_filter(fltr_prep.ImageNormalization())
+            pipeline_t1.set_param(filter_params, len(pipeline_t1.filters) - 1)
         elif kwargs.get('z_score', False):
             pipeline_t1.add_filter(fltr_prep.ZScore())
-        pipeline_t1.set_param(normalization_parameters_t1, len(pipeline_t1.filters) - 1)
+            pipeline_t1.set_param(filter_params, len(pipeline_t1.filters) - 1)
+        # pipeline_t1.set_param(normalization_parameters_t1, len(pipeline_t1.filters) - 1)
 
     # execute pipeline on the T1w image
     img.images[structure.BrainImageTypes.T1w] = pipeline_t1.execute(img.images[structure.BrainImageTypes.T1w])
@@ -306,14 +321,14 @@ def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
     pipeline_t2_ref = fltr.FilterPipeline()
     if kwargs.get('registration_pre', False):
         pipeline_t2_ref.add_filter(fltr_prep.ImageRegistration())
-        pipeline_t2_ref.set_param(fltr_prep.ImageRegistrationParameters(atlas_t2, img.transformation),
+        pipeline_t2_ref.set_param(fltr_prep.ImageRegistrationParameters(atlas_t2, reference_img.transformation),
                                   len(pipeline_t2_ref.filters) - 1)
     if kwargs.get('skullstrip_pre', False):
         pipeline_t2_ref.add_filter(fltr_prep.SkullStripping())
-        pipeline_t2_ref.set_param(fltr_prep.SkullStrippingParameters(img.images[structure.BrainImageTypes.BrainMask]),
+        pipeline_t2_ref.set_param(fltr_prep.SkullStrippingParameters(reference_img.images[structure.BrainImageTypes.BrainMask]),
                                   len(pipeline_t2_ref.filters) - 1)
-    reference_t2_img = pipeline_t2_ref.execute(reference_img.images[structure.BrainImageTypes.T1w])
-    normalization_parameters_t2 = fltr_prep.NormalizationParameters(reference_t2_img)
+    reference_img.images[structure.BrainImageTypes.T2w] = pipeline_t2_ref.execute(reference_img.images[structure.BrainImageTypes.T2w])
+    normalization_parameters_t2 = fltr_prep.NormalizationParameters(reference_img.images[structure.BrainImageTypes.T2w])
 
     # construct pipeline for T2w image pre-processing
     pipeline_t2 = fltr.FilterPipeline()
@@ -325,19 +340,25 @@ def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
         pipeline_t2.add_filter(fltr_prep.SkullStripping())
         pipeline_t2.set_param(fltr_prep.SkullStrippingParameters(img.images[structure.BrainImageTypes.BrainMask]),
                               len(pipeline_t2.filters) - 1)
+
     if kwargs.get('normalization_pre', False):
+        filter_params = fltr_prep.NormalizationParameters(reference_img.images[structure.BrainImageTypes.T2w], img.id_)
         if kwargs.get('white_stripes', False):
-            pipeline_t2.add_filter(fltr_prep.WhiteStripesT2())  # mask=kwargs.get('t1_mask', None))
+            pipeline_t2.add_filter(fltr_prep.WhiteStripesT2())
+            pipeline_t2.set_param(filter_params, len(pipeline_t2.filters) - 1)
         elif kwargs.get('no_normalization', False):
             pipeline_t2.add_filter(fltr_prep.NoNormalization())
+            pipeline_t2.set_param(filter_params, len(pipeline_t2.filters) - 1)
         elif kwargs.get('histogram_matching_1', False):
-            pipeline_t2.add_filter(fltr_prep.HistogramMatching1())
+            pipeline_t2.add_filter(fltr_prep.HistogramMatching())
+            pipeline_t2.set_param(filter_params, len(pipeline_t2.filters) - 1)
         elif kwargs.get('histogram_matching_2', False):
             pipeline_t2.add_filter(fltr_prep.ImageNormalization())
+            pipeline_t2.set_param(filter_params, len(pipeline_t2.filters) - 1)
         elif kwargs.get('z_score', False):
             pipeline_t2.add_filter(fltr_prep.ZScore())
-        pipeline_t2.set_param(normalization_parameters_t2,
-                              len(pipeline_t2.filters) - 1)
+            pipeline_t2.set_param(filter_params, len(pipeline_t2.filters) - 1)
+        # pipeline_t2.set_param(normalization_parameters_t2, len(pipeline_t2.filters) - 1)
 
     # execute pipeline on the T2w image
     img.images[structure.BrainImageTypes.T2w] = pipeline_t2.execute(img.images[structure.BrainImageTypes.T2w])
@@ -363,7 +384,7 @@ def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
     img.feature_images = {}  # we free up memory because we only need the img.feature_matrix
     # for training of the classifier
 
-    print('*** pre_process')
+    # print('*** pre_process')
 
     return img
 
@@ -393,7 +414,7 @@ def post_process(img: structure.BrainImage, segmentation: sitk.Image, probabilit
                                                      img.images[structure.BrainImageTypes.T2w],
                                                      probability), len(pipeline.filters) - 1)
 
-    print('*** post_process')
+    # print('*** post_process')
 
     return pipeline.execute(segmentation)
 
@@ -425,7 +446,7 @@ def init_evaluator() -> eval_.Evaluator:
 
     evaluator = eval_.SegmentationEvaluator(metrics, labels)
 
-    print('*** init_evaluator')
+    # print('*** init_evaluator')
 
     return evaluator
 
@@ -457,7 +478,7 @@ def pre_process_batch(data_batch: t.Dict[structure.BrainImageTypes, structure.Br
     else:
         images = [pre_process(id_, path, **pre_process_params) for id_, path in params_list]
 
-    print('*** pre_process_batch')
+    # print('*** pre_process_batch')
 
     return images
 
@@ -487,6 +508,6 @@ def post_process_batch(brain_images: t.List[structure.BrainImage], segmentations
     else:
         pp_images = [post_process(img, seg, prob, **post_process_params) for img, seg, prob in param_list]
 
-    print('*** post_process_batch')
+    # print('*** post_process_batch')
 
     return pp_images

@@ -21,7 +21,7 @@ class PicklableAffineTransform:
         transform.SetParameters(self.parameters)
         return transform
 
-    print('***MP PicklableAffineTransform')
+    # print('***MP PicklableAffineTransform')
 
 class PicklableBrainImage:
     """Represents a brain image that can be pickled."""
@@ -47,7 +47,7 @@ class PicklableBrainImage:
         # with n being the amount of voxels
         self.pickable_transform = PicklableAffineTransform(transform)
 
-    print('***MP PicklableBrainImage')
+    # print('***MP PicklableBrainImage')
 
 
 class BrainImageToPicklableBridge:
@@ -79,7 +79,7 @@ class BrainImageToPicklableBridge:
 
         return pickable_brain_image
 
-    print('***MP BrainImageToPicklableBridge')
+    # print('***MP BrainImageToPicklableBridge')
 
 
 class PicklableToBrainImageBridge:
@@ -111,7 +111,7 @@ class PicklableToBrainImageBridge:
         brain_image.feature_matrix = picklable_brain_image.feature_matrix
         return brain_image
 
-    print('***MP PicklableToBrainImageBridge')
+    # print('***MP PicklableToBrainImageBridge')
 
 
 class DefaultPickleHelper:
@@ -167,7 +167,7 @@ class DefaultPickleHelper:
         """
         return ret_val
 
-    print('***MP DefaultPickleHelper')
+    # print('***MP DefaultPickleHelper')
 
 
 class PreProcessingPickleHelper(DefaultPickleHelper):
@@ -197,7 +197,7 @@ class PreProcessingPickleHelper(DefaultPickleHelper):
         """
         return PicklableToBrainImageBridge.convert(ret_val)
 
-    print('***MP PreProcessingPickleHelper')
+    # print('***MP PreProcessingPickleHelper')
 
 
 class PostProcessingPickleHelper(DefaultPickleHelper):
@@ -259,7 +259,7 @@ class PostProcessingPickleHelper(DefaultPickleHelper):
         np_img, image_properties = ret_val
         return conversion.NumpySimpleITKImageBridge.convert(np_img, image_properties)
 
-    print('***MP PostProcessingPickleHelper')
+    # print('***MP PostProcessingPickleHelper')
 
 
 class MultiProcessor:
@@ -304,4 +304,4 @@ class MultiProcessor:
 
         return wrapped_fn
 
-    print('***MP MultiProcessor')
+    # print('***MP MultiProcessor')

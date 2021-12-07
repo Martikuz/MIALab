@@ -13,7 +13,7 @@ class AtlasCoordinates(fltr.Filter):
         """Initializes a new instance of the AtlasCoordinates class."""
         super().__init__()
 
-        print('*******FE init AtlasCoordinates')
+        # print('*******FE init AtlasCoordinates')
 
     def execute(self, image: sitk.Image, params: fltr.FilterParams = None) -> sitk.Image:
         """Executes a atlas coordinates feature extractor on an image.
@@ -56,7 +56,7 @@ class AtlasCoordinates(fltr.Filter):
         img_out = sitk.GetImageFromArray(atlas_coords)
         img_out.CopyInformation(image)
 
-        print('*******FE execute AtlasCoordinates')
+        # print('*******FE execute AtlasCoordinates')
 
         return img_out
 
@@ -67,7 +67,7 @@ class AtlasCoordinates(fltr.Filter):
             str: String representation.
         """
 
-        print('*******FE str AtlasCoordinates')
+        # print('*******FE str AtlasCoordinates')
 
         return 'AtlasCoordinates:\n' \
             .format(self=self)
@@ -109,7 +109,7 @@ def first_order_texture_features_function(values):
     num_values = len(values)
     p = values / (np.sum(values) + eps)
 
-    print('*******FE first_order_texture_features_function')
+    # print('*******FE first_order_texture_features_function')
 
     return np.array([mean,
                      np.var(values),  # variance
@@ -141,7 +141,7 @@ class NeighborhoodFeatureExtractor(fltr.Filter):
         self.kernel = kernel
         self.function = function_
 
-        print('*******FE init NeighborhoodFeatureExtractor')
+        # print('*******FE init NeighborhoodFeatureExtractor')
 
     def execute(self, image: sitk.Image, params: fltr.FilterParams = None) -> sitk.Image:
         """Executes a neighborhood feature extractor on an image.
@@ -193,7 +193,7 @@ class NeighborhoodFeatureExtractor(fltr.Filter):
         img_out = sitk.GetImageFromArray(img_out_arr)
         img_out.CopyInformation(image)
 
-        print('*******FE execute NeighborhoodFeatureExtractor')
+        # print('*******FE execute NeighborhoodFeatureExtractor')
 
         return img_out
 
@@ -203,7 +203,7 @@ class NeighborhoodFeatureExtractor(fltr.Filter):
         Returns:
             str: String representation.
         """
-        print('*******FE str NeighborhoodFeatureExtractor')
+        # print('*******FE str NeighborhoodFeatureExtractor')
 
         return 'NeighborhoodFeatureExtractor:\n' \
             .format(self=self)
@@ -264,8 +264,8 @@ class RandomizedTrainingMaskGenerator:
         mask.SetDirection(ground_truth.GetDirection())
         mask.SetSpacing(ground_truth.GetSpacing())
 
-        print('*******FE get_mask RandomizedTrainingMaskGenerator')
+        # print('*******FE get_mask RandomizedTrainingMaskGenerator')
 
         return mask
 
-    print('*******FE RandomizedTrainingMaskGenerator')
+    # print('*******FE RandomizedTrainingMaskGenerator')

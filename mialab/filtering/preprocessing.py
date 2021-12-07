@@ -28,10 +28,12 @@ class NormalizationParameters(pymia_fltr.FilterParams):
     def __init__(self,
                  reference_image: sitk.Image,
                  image_id: str = '',
+                 label = '',
                  ) -> None:
         super().__init__()
         self.reference_image = reference_image
         self.image_id = image_id
+        self.label = label
 
 
 class ImageNormalization(pymia_fltr.Filter):
@@ -47,9 +49,10 @@ class ImageNormalization(pymia_fltr.Filter):
 
     #******************** FIGURE PLOT Image ***************************************************************
     @staticmethod
-    def plot_image(image_array, ref_array, matched_array, id_) -> None:
+    def plot_image(image_array, ref_array, matched_array, id_, label) -> None:
         # TODO code for plot 1
         fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(8, 3), sharex=True, sharey=True)
+        fig.suptitle(f'subject_{id_}_{label}')
         for aa in (ax1, ax2, ax3):
             aa.set_axis_off()
         ax1.imshow(image_array[98, :, :])
@@ -59,14 +62,15 @@ class ImageNormalization(pymia_fltr.Filter):
         ax3.imshow(matched_array[98, :, :])
         ax3.set_title('Matched')
         plt.tight_layout()
-        output_path = f'C:/temp/result_pic_{id_}.png'
+        output_path = f'C:/temp/result_pic_{id_}_{label}.png'
         fig.savefig(output_path)
+        plt.close()
 
     #******************** FIGURE PLOT Histogram ***********************************************************
     @staticmethod
-    def plot_histogram(data0, data1, data2, id_) -> None:
+    def plot_histogram(data0, data1, data2, id_, label) -> None:
         fig, axs = plt.subplots(1, 3)
-        fig.suptitle('histogram')
+        fig.suptitle(f'histogram subject_{id_}_{label}')
         colors = ['b', 'r', 'g']
         y_limits = (0, 5e-5)
         axs[0].hist(data0, 400, color=colors[0],density=True)
@@ -78,8 +82,9 @@ class ImageNormalization(pymia_fltr.Filter):
         axs[2].hist(data2, 400, color=colors[2],density=True)
         axs[2].title.set_text('matched_array')
         axs[2].set_ylim(*y_limits)
-        output_path = f'C:/temp/result_histo_{id_}.png'
+        output_path = f'C:/temp/result_histo_{id_}_{label}.png'
         fig.savefig(output_path)
+        plt.close()
 
     def execute(self, image: sitk.Image, params: NormalizationParameters = None) -> sitk.Image:
         """Executes a normalization on an image.
@@ -164,9 +169,9 @@ class HistogramMatching(ImageNormalization):
         data2 = matched_array.flatten()
 
         # print(params.image_id)
+        self.plot_image(image_array, ref_array, matched_array, params.image_id, params.label)
+        self.plot_histogram(data0, data1, data2, params.image_id, params.label)
 
-        self.plot_image(image_array, ref_array, matched_array, params.image_id)
-        self.plot_histogram(data0, data1, data2, params.image_id)
 
         if isinstance(img_arr, sitk.Image):
             img_arr.CopyInformation(image)

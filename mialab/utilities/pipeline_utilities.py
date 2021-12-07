@@ -16,7 +16,7 @@ import mialab.filtering.postprocessing as fltr_postp
 import mialab.filtering.preprocessing as fltr_prep
 import mialab.utilities.multi_processor as mproc
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 atlas_t1 = sitk.Image()
 atlas_t2 = sitk.Image()
@@ -39,11 +39,11 @@ def load_atlas_images(directory: str):
 
     # print('*** load_atlas_images')
 
-    # Martin
-    at1 = sitk.GetArrayFromImage(atlas_t1)
-    at2 = sitk.GetArrayFromImage(atlas_t2)
-
-    # show image
+    # # Plot variables
+    # at1 = sitk.GetArrayFromImage(atlas_t1)
+    # at2 = sitk.GetArrayFromImage(atlas_t2)
+    #
+    # # show image
     # fig, axs = plt.subplots(1, 2)
     # fig.suptitle('atlas')
     # slice = 100
@@ -52,14 +52,14 @@ def load_atlas_images(directory: str):
     # axs[1].imshow(at2[slice, :, :])
     # axs[1].title.set_text('atlas t2')
     # plt.show()
-
-    # histoplot
+    #
+    # # histoplot
     # histoplt = np.histogram(at1, bins=10, range=None, normed=None, weights=None, density=None)
     # _ = plt.hist(histoplt, bins='auto')
     # plt.title("atlas Histogram with 'auto' bins")
     # plt.show()
-
-    # histoplot better
+    #
+    # # histoplot better
     # fig, axs = plt.subplots(1, 2)
     # fig.suptitle('atlas histograms')
     # data0 = at1[at1 > at1.mean()].flatten()
@@ -281,7 +281,8 @@ def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
         pipeline_t1_ref.set_param(fltr_prep.SkullStrippingParameters(reference_img.images[structure.BrainImageTypes.BrainMask]),
                                   len(pipeline_t1_ref.filters) - 1)
     reference_img.images[structure.BrainImageTypes.T1w] = pipeline_t1_ref.execute(reference_img.images[structure.BrainImageTypes.T1w])
-    normalization_parameters_t1 = fltr_prep.NormalizationParameters(reference_img.images[structure.BrainImageTypes.T1w])
+    # normalization_parameters_t1 = fltr_prep.NormalizationParameters(reference_img.images[structure.BrainImageTypes.T1w])
+    # normalization_parameters_t1 = fltr_prep.NormalizationParameters(reference_img.images[structure.BrainImageTypes.T1w], img.id_)
 
     # construct pipeline for T1w image pre-processing
     pipeline_t1 = fltr.FilterPipeline()
@@ -295,7 +296,7 @@ def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
                               len(pipeline_t1.filters) - 1)
 
     if kwargs.get('normalization_pre', False):
-        filter_params = fltr_prep.NormalizationParameters(reference_img.images[structure.BrainImageTypes.T1w], img.id_)
+        filter_params = fltr_prep.NormalizationParameters(reference_img.images[structure.BrainImageTypes.T1w], img.id_, 'T1w')
         if kwargs.get('white_stripes', False):
             pipeline_t1.add_filter(fltr_prep.WhiteStripesT1())
             pipeline_t1.set_param(filter_params, len(pipeline_t1.filters) - 1)
@@ -328,7 +329,8 @@ def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
         pipeline_t2_ref.set_param(fltr_prep.SkullStrippingParameters(reference_img.images[structure.BrainImageTypes.BrainMask]),
                                   len(pipeline_t2_ref.filters) - 1)
     reference_img.images[structure.BrainImageTypes.T2w] = pipeline_t2_ref.execute(reference_img.images[structure.BrainImageTypes.T2w])
-    normalization_parameters_t2 = fltr_prep.NormalizationParameters(reference_img.images[structure.BrainImageTypes.T2w])
+    # normalization_parameters_t2 = fltr_prep.NormalizationParameters(reference_img.images[structure.BrainImageTypes.T2w])
+    # normalization_parameters_t2 = fltr_prep.NormalizationParameters(reference_img.images[structure.BrainImageTypes.T2w], img.id_)
 
     # construct pipeline for T2w image pre-processing
     pipeline_t2 = fltr.FilterPipeline()
@@ -342,7 +344,7 @@ def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
                               len(pipeline_t2.filters) - 1)
 
     if kwargs.get('normalization_pre', False):
-        filter_params = fltr_prep.NormalizationParameters(reference_img.images[structure.BrainImageTypes.T2w], img.id_)
+        filter_params = fltr_prep.NormalizationParameters(reference_img.images[structure.BrainImageTypes.T2w], img.id_, 'T2w')
         if kwargs.get('white_stripes', False):
             pipeline_t2.add_filter(fltr_prep.WhiteStripesT2())
             pipeline_t2.set_param(filter_params, len(pipeline_t2.filters) - 1)

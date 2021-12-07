@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import numpy as np
+# import numpy as np
 import os
 import pandas as pd
 from datetime import datetime
@@ -114,8 +114,8 @@ def main():
     # Configuration
     metric_to_compute = ('DICE', 'HDRFDST95')   # mk: added code that renames HDRFDST to HDRFDST95
     structures_to_compute = ('Thalamus',)
-    experiment_paths = ('E:/01_Programme/Git/00_MyFolder/MIALab/bin/mia-result/2021-10-25-14-55-35',
-                        'E:/01_Programme/Git/00_MyFolder/MIALab/bin/mia-result/2021-11-29-10-21-09')
+    experiment_paths = ('E:/01_Programme/Git/00_MyFolder/MIALab/bin/mia-result/first',
+                        'E:/01_Programme/Git/00_MyFolder/MIALab/bin/mia-result/second')
     experiment_names = ('First Experiment', 'Second Experiment')
     plot_output_directory = './mia-result/'
     plot_title = ('Comparison of Experiments on Thalamus',)

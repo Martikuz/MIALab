@@ -80,10 +80,14 @@ def main(result_dir: str, data_atlas_dir: str, data_train_dir: str, data_test_di
     data_train = np.concatenate([img.feature_matrix[0] for img in images])
     labels_train = np.concatenate([img.feature_matrix[1] for img in images]).squeeze()
 
-    warnings.warn('Random forest parameters not properly set.')
+    # warnings.warn('Random forest parameters not properly set.')
     forest = sk_ensemble.RandomForestClassifier(max_features=images[0].feature_matrix[0].shape[1],
                                                 n_estimators=64,
                                                 max_depth=64)
+    # according to my studies as a beginner, I would recommend a value between 5-10 for n_estimators = trees
+    # and a value around 30 for max_depth, since there were no further changings in the output in the exercise method.
+    # I did not investigate if the normalization method could have an impact on this. I expect not.
+    # other studies lead to the parameter values of 64 for both of them.
 
     start_time = timeit.default_timer()
     forest.fit(data_train, labels_train)

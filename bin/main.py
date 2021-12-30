@@ -50,6 +50,11 @@ def main(result_dir: str, data_atlas_dir: str, data_train_dir: str, data_test_di
         - Evaluation of the segmentation
     """
 
+    print('')
+    print('start run: ')
+    print(datetime.datetime.now())
+    print('')
+
     # load atlas images
     putil.load_atlas_images(data_atlas_dir)
 
@@ -204,3 +209,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     main(args.result_dir, args.data_atlas_dir, args.data_train_dir, args.data_test_dir)
+
+    print('')
+    print('end run: ')
+    print(datetime.datetime.now())
+    print('')

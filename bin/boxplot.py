@@ -152,7 +152,7 @@ def main():
                 generate_boxplot(data, structure, plot_output_directory, plot_timestamp, title, ylabel, metric,
                                  min_=0, max_=1)
             else:
-                generate_boxplot(data, structure, plot_output_directory, plot_timestamp, title, ylabel, metric)
+                generate_boxplot(data, structure, plot_output_directory, plot_timestamp, title, ylabel, metric, min_=0, max_=25)
 
 
 if __name__ == '__main__':

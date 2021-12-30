@@ -19,6 +19,7 @@ from typing import Tuple
 import statsmodels.api as sm
 from scipy.signal import argrelmax
 
+
 # *******************************************************************************************************************
 # ***************** BEGIN - Normalization ***************************************************************************
 
@@ -37,7 +38,7 @@ class NormalizationParameters(pymia_fltr.FilterParams):
 
 
 class ImageNormalization(pymia_fltr.Filter):
-    """Represents a normalization filter."""
+    """Represents the base class for the Histogram Matching Method. Was originaly a Normalisation Method Filter"""
 
     def __init__(self, normalization='HM2', mask=None):
         """Initializes a new instance of the ImageNormalization class."""
@@ -86,6 +87,7 @@ class ImageNormalization(pymia_fltr.Filter):
         fig.savefig(output_path)
         plt.close()
 
+
     def execute(self, image: sitk.Image, params: NormalizationParameters = None) -> sitk.Image:
         """Executes a normalization on an image.
 
@@ -102,27 +104,8 @@ class ImageNormalization(pymia_fltr.Filter):
         if self.normalization == 'None':
             print('WARNING: no normalization method applied!')
 
-        # elif self.normalization == 'HM2':
-        #     print('Normalization: Histogram Matching Method 2')
-        #
-        #     ref_params = params.reference_image
-        #
-        #     matched=sitk.HistogramMatching(image, ref_params)
-        #     image_array=sitk.GetArrayFromImage(image)
-        #     ref_array=sitk.GetArrayFromImage(ref_params)
-        #     matched_array = sitk.GetArrayFromImage(matched)
-        #
-        #     img_arr = matched
-        #     data0 = image_array.flatten()
-        #     data1 = ref_array.flatten()
-        #     data2 = matched_array.flatten()
-        #
-        #     self.plot_image(image_array, ref_array, matched_array, params.image_id)
-        #     self.plot_histogram(data0, data1, data2, params.image_id)
-
         else:
             print('WARNING: unknown normalization method initialisation input!')
-            img_out = img_arr # why not needed? and why does it lead to an error?
 
         if isinstance(img_arr, sitk.Image):
             img_arr.CopyInformation(image)
@@ -152,13 +135,20 @@ class ImageNormalization(pymia_fltr.Filter):
 class HistogramMatching(ImageNormalization):
 
     def execute(self, image: sitk.Image, params: NormalizationParameters = None) -> sitk.Image:
-        print('Normalization: Histogram Matching Method 1')
+        print('Normalization: Histogram Matching Method')
 
         img_arr = sitk.GetArrayFromImage(image)
 
         ref_params = params.reference_image
 
-        matched = sitk.HistogramMatching(image, ref_params)
+        # matched = sitk.HistogramMatching(image, ref_params)
+
+        matcher = sitk.HistogramMatchingImageFilter()
+        matcher.SetNumberOfHistogramLevels(1024)
+        matcher.SetNumberOfMatchPoints(1000)
+        matcher.ThresholdAtMeanIntensityOn()
+        matched = matcher.Execute(image, params.reference_image)
+
         image_array = sitk.GetArrayFromImage(image)
         ref_array = sitk.GetArrayFromImage(ref_params)
         matched_array = sitk.GetArrayFromImage(matched)
@@ -188,6 +178,7 @@ class HistogramMatching(ImageNormalization):
 class NoNormalization(pymia_fltr.Filter):
     """Represents no norm normalization"""
     def execute(self, image: sitk.Image, params: FilterParams = None) -> sitk.Image:
+        print('No Normalization applied')
         return image
 
 
@@ -195,6 +186,7 @@ class ZScore(pymia_fltr.Filter):
 
     def execute(self, image: sitk.Image, params: FilterParams = None) -> sitk.Image:
         """Represents ZScore"""
+        print('Normalization: Z-Score Method')
         img_arr = sitk.GetArrayFromImage(image)
         mean = img_arr.mean()
         std = img_arr.std()
@@ -318,6 +310,7 @@ class WhiteStripesBase(ImageNormalization):
 class WhiteStripesT1(WhiteStripesBase):
 
     def execute(self, image: sitk.Image, params: FilterParams = None) -> sitk.Image:
+        print("Normalization: WhiteStripesT1 Method")
         #preprocessed_image = super().execute(image, params)
         #Last-->T1
         width = 0.05
@@ -342,7 +335,7 @@ class WhiteStripesT2(WhiteStripesBase):
     """Represents WhiteStripesT2 normalization"""
     #Largest-->T2
     def execute(self, image: sitk.Image, params: FilterParams = None) -> sitk.Image:
-        print("WhiteStripesT2-started")
+        print("Normalization: WhiteStripesT2 Method")
         width=0.05
         image_array = sitk.GetArrayFromImage(image)
         mtest3=np.min(image_array)

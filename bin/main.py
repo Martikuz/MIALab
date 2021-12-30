@@ -74,9 +74,8 @@ def main(result_dir: str, data_atlas_dir: str, data_train_dir: str, data_test_di
                           'gradient_intensity_feature': True,
                           'white_stripes': False,
                           'no_normalization': False,
-                          'histogram_matching_1': True,
-                          'histogram_matching_2': False,
-                          'z_score': False}
+                          'histogram_matching_1': False,
+                          'z_score': True}
 
     # load images for training and pre-process
     images = putil.pre_process_batch(crawler.data, pre_process_params, multi_process=False)
@@ -87,8 +86,8 @@ def main(result_dir: str, data_atlas_dir: str, data_train_dir: str, data_test_di
 
     # warnings.warn('Random forest parameters not properly set.')
     forest = sk_ensemble.RandomForestClassifier(max_features=images[0].feature_matrix[0].shape[1],
-                                                n_estimators=64,
-                                                max_depth=64)
+                                                n_estimators=8,
+                                                max_depth=8)
     # according to my studies as a beginner, I would recommend a value between 5-10 for n_estimators = trees
     # and a value around 30 for max_depth, since there were no further changings in the output in the exercise method.
     # I did not investigate if the normalization method could have an impact on this. I expect not.

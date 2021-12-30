@@ -203,11 +203,13 @@ def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
 
     # load reference image
     # TODO
-    reference_image_dir_path = 'E:/01_Programme/Git/00_MyFolder/MIALab/data/train/100307/'
+    reference_image_dir_path = 'E:/01_Programme/Git/00_MyFolder/MIALab/data/train/100307/' # path Martin
+    # reference_image_dir_path = 'C:/Users/Micha/PycharmProjects/MiaProject/data/train/100307/' # path Michi
     reference_t1_path = os.path.join(reference_image_dir_path, 'T1native.nii.gz')
     reference_t2_path = os.path.join(reference_image_dir_path, 'T2native.nii.gz')
     reference_brain_mask_path = os.path.join(reference_image_dir_path, 'Brainmasknative.nii.gz')
-    reference_transform_path = 'E:/01_Programme/Git/00_MyFolder/MIALab/data/train/100307/affine.txt'
+    reference_transform_path = 'E:/01_Programme/Git/00_MyFolder/MIALab/data/train/100307/affine.txt' # path Martin
+    # reference_transform_path = 'C:/Users/Micha/PycharmProjects/MiaProject/data/train/100307/affine.txt' # path Michi
     reference_img = structure.BrainImage('Reference',
                                          reference_image_dir_path,
                                          {structure.BrainImageTypes.T1w: sitk.ReadImage(reference_t1_path),
@@ -259,7 +261,6 @@ def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
         pipeline_t1.add_filter(fltr_prep.SkullStripping())
         pipeline_t1.set_param(fltr_prep.SkullStrippingParameters(img.images[structure.BrainImageTypes.BrainMask]),
                               len(pipeline_t1.filters) - 1)
-
     if kwargs.get('normalization_pre', False):
         filter_params = fltr_prep.NormalizationParameters(reference_img.images[structure.BrainImageTypes.T1w], img.id_, 'T1w')
         if kwargs.get('white_stripes', False):
@@ -270,9 +271,6 @@ def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
             pipeline_t1.set_param(filter_params, len(pipeline_t1.filters) - 1)
         elif kwargs.get('histogram_matching_1', False):
             pipeline_t1.add_filter(fltr_prep.HistogramMatching())
-            pipeline_t1.set_param(filter_params, len(pipeline_t1.filters) - 1)
-        elif kwargs.get('histogram_matching_2', False):
-            pipeline_t1.add_filter(fltr_prep.ImageNormalization())
             pipeline_t1.set_param(filter_params, len(pipeline_t1.filters) - 1)
         elif kwargs.get('z_score', False):
             pipeline_t1.add_filter(fltr_prep.ZScore())
@@ -307,7 +305,6 @@ def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
         pipeline_t2.add_filter(fltr_prep.SkullStripping())
         pipeline_t2.set_param(fltr_prep.SkullStrippingParameters(img.images[structure.BrainImageTypes.BrainMask]),
                               len(pipeline_t2.filters) - 1)
-
     if kwargs.get('normalization_pre', False):
         filter_params = fltr_prep.NormalizationParameters(reference_img.images[structure.BrainImageTypes.T2w], img.id_, 'T2w')
         if kwargs.get('white_stripes', False):
@@ -318,9 +315,6 @@ def pre_process(id_: str, paths: dict, **kwargs) -> structure.BrainImage:
             pipeline_t2.set_param(filter_params, len(pipeline_t2.filters) - 1)
         elif kwargs.get('histogram_matching_1', False):
             pipeline_t2.add_filter(fltr_prep.HistogramMatching())
-            pipeline_t2.set_param(filter_params, len(pipeline_t2.filters) - 1)
-        elif kwargs.get('histogram_matching_2', False):
-            pipeline_t2.add_filter(fltr_prep.ImageNormalization())
             pipeline_t2.set_param(filter_params, len(pipeline_t2.filters) - 1)
         elif kwargs.get('z_score', False):
             pipeline_t2.add_filter(fltr_prep.ZScore())

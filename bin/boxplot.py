@@ -114,9 +114,43 @@ def main():
     # Configuration
     metric_to_compute = ('DICE', 'HDRFDST95')   # mk: added code that renames HDRFDST to HDRFDST95
     structures_to_compute = ('Thalamus',)
-    experiment_paths = ('E:/01_Programme/Git/00_MyFolder/MIALab/bin/mia-result/first',
-                        'E:/01_Programme/Git/00_MyFolder/MIALab/bin/mia-result/second')
-    experiment_names = ('First Experiment', 'Second Experiment')
+
+    #****************** Configurations *****************************
+
+    mode=1 # defines which path structure is analysed
+
+    if mode==1:
+        structures_to_compute = ('Thalamus', 'WhiteMatter', 'GreyMatter', 'Hippocampus', 'Amygdala')
+        experiment_paths = ('C:/Users/Micha/PycharmProjects/MiaProject/bin/mia-result/NoNormalization3232',
+                        'C:/Users/Micha/PycharmProjects/MiaProject/bin/mia-result/ZS 6464',
+                        'C:/Users/Micha/PycharmProjects/MiaProject/bin/mia-result/WS6464neu',
+                        'C:/Users/Micha/PycharmProjects/MiaProject/bin/mia-result/Histo6464')
+        experiment_names = ('None', 'Z-Score', 'White-Stripe', 'Histogram')
+
+
+    elif mode==2:
+        structures_to_compute = ('Thalamus', 'WhiteMatter', 'GreyMatter', 'Hippocampus', 'Amygdala')
+        experiment_paths = ('C:/Users/Micha/PycharmProjects/MiaProject/bin/mia-result/NoNormalization3232',
+                            'C:/Users/Micha/PycharmProjects/MiaProject/bin/mia-result/ZS 3232')
+        experiment_names = ('None', 'Z-Score')
+
+    elif mode == 3:
+        structures_to_compute = ('Thalamus', 'WhiteMatter', 'GreyMatter', 'Hippocampus', 'Amygdala')
+        experiment_paths = ('C:/Users/Micha/PycharmProjects/MiaProject/bin/mia-result/WS3232und3',
+                            'C:/Users/Micha/PycharmProjects/MiaProject/bin/mia-result/WS3232und4',
+                            'C:/Users/Micha/PycharmProjects/MiaProject/bin/mia-result/WS 3232',
+                            'C:/Users/Micha/PycharmProjects/MiaProject/bin/mia-result/WS3232und6')
+        experiment_names = ('6% Quantile', '8% Quantile', '10% Quantile', '12% Quantile')
+
+    elif mode == 4:
+        structures_to_compute = ('Thalamus', 'WhiteMatter', 'GreyMatter', 'Hippocampus', 'Amygdala')
+        experiment_paths = ('E:/01_Programme/Git/00_MyFolder/MIALab/bin/mia-result/first',
+                            'E:/01_Programme/Git/00_MyFolder/MIALab/bin/mia-result/second')
+        experiment_names = ('First Experiment', 'Second Experiment')
+
+    #************** End Configurations **************************
+
+
     plot_output_directory = './mia-result/'
     plot_title = ('Comparison of Experiments on Thalamus',)
     plot_ylabels = ('Dice', 'Hausdorff-Distance')
